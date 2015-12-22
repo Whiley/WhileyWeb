@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.*;
 
@@ -54,21 +55,25 @@ public class WhileyLabsServlet extends HttpServlet {
 		writer.println("<img src=\"images/logo.png\"/>");
 		writer.println("<div id=\"title\">Whiley Labs</div>");
 		writer.println("</div>");
+//		writer.println("<table border=\"1px\">");
 //		for(String user : getUsers(connection)) {
-//			writer.println("USER: " + user);
+//			writer.println("<tr>");
+//			writer.println(user);
+//			writer.println("</tr>");
 //		}
+//		writer.println("</table>");
 		writer.println("</body>");
 	}
 	
 	public List<String> getUsers(Connection connection) throws SQLException {
 		ArrayList<String> users = new ArrayList<String>();
 		Statement statement = connection.createStatement();
-		ResultSet rs = statement.executeQuery("SELECT * FROM Users;");
-		while(rs.next()) {
+		ResultSet rs = statement.executeQuery("SELECT * FROM Users");
+		while(rs.next()) {			
 			int id = rs.getInt("ID");
 			String surname = rs.getString("Surname");
 			String firstname = rs.getString("FirstName");
-			users.add(Integer.toString(id) + ":" + firstname + ":" + surname);
+			users.add("<td>" + Integer.toString(id) + "</td><td>" + firstname + "</td><td>" + surname + "<td>");
 		}
 		return users;
 	}
