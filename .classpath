@@ -3,7 +3,12 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/HttpComponents"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/WyRL"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JWebKit"/>
-	<classpathentry kind="lib" path="lib/wyc-all-v0.3.39.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/CommonsLang"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/whiley.wybs"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/whiley.wyc"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/whiley.wyil"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/whiley.wycs"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
