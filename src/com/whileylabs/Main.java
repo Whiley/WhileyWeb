@@ -7,6 +7,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.http.*;
 import org.apache.http.client.utils.URIBuilder;
@@ -69,9 +70,10 @@ public class Main {
 
 		try {
 			server.start();
+			//server.awaitTermination(-1, TimeUnit.MILLISECONDS);
 		} catch(IOException e) {
 			e.printStackTrace();
-		}
+		} 
 	}
 	
     private static class Logger implements ExceptionLogger {

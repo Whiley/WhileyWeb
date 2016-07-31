@@ -1,0 +1,35 @@
+<project name="whileylabs" default="compile">
+  <import file="config.xml"/>
+
+  <!-- ============================================== -->
+  <!-- Compile Java Files -->
+  <!-- ============================================== -->
+
+  <target name="compile">
+    <javac debug="true" debuglevel="vars,lines,source" source="1.7" target="1.7" includeantruntime="true">
+      <src path="src"/>
+      <include name="*/**"/>
+      <exclude name="*/**/package-info.java"/>
+      <classpath>
+        <pathelement path="${WYC}"/>
+        <pathelement path="${JWEBKIT}"/>	
+        <path refid="deps.classpath"/>
+      </classpath>      
+    </javac>
+  </target>
+
+  <!-- ============================================== -->
+  <!-- Start Server -->
+  <!-- ============================================== -->
+
+  <target name="run">
+    <java classname="com.whileylabs.Main">
+      <classpath>
+	<pathelement location="bin"/>
+        <pathelement path="${WYC}"/>
+        <pathelement path="${JWEBKIT}"/>
+        <path refid="deps.classpath"/>
+      </classpath>
+    </java>
+  </target>
+</project>
