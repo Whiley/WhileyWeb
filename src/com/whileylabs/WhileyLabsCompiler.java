@@ -42,7 +42,6 @@ import wycc.util.Pair;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;
-import wycs.transforms.SmtVerificationCheck;
 import wycs.transforms.VerificationCheck;
 import wycs.util.WycsBuildTask;
 import wyfs.lang.Content;
@@ -51,6 +50,7 @@ import wyfs.util.Trie;
 import wyfs.util.VirtualRoot;
 import wyil.builders.Wyil2WyalBuilder;
 import wyil.lang.WyilFile;
+import wycc.lang.Attribute;
 
 public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 
@@ -118,7 +118,8 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 			result.put("result", "success");
 		} catch (SyntaxError e) {
 			e.printStackTrace();
-			EnclosingLine enclosing = readEnclosingLine(srcFile.inputStream(), e.start(), e.end());
+			Attribute.Source src = e.getElement().attribute(Attribute.Source.class);
+			EnclosingLine enclosing = readEnclosingLine(srcFile.inputStream(), src.start, src.end);
 			result.put("result", "errors");
 			result.put("errors", toErrorResponse(enclosing, e.getMessage()));
 		} catch(Exception e) {
