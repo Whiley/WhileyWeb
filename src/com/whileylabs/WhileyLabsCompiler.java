@@ -1,15 +1,9 @@
 package com.whileylabs;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.io.StringBufferInputStream;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -19,38 +13,26 @@ import java.util.Map;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.http.*;
 import org.apache.http.client.utils.*;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHttpEntityEnclosingRequest;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HttpContext;
 
 import jwebkit.http.HttpMethodDispatchHandler;
-import wybs.lang.Build;
+import wybs.lang.SyntaxError;
 import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
-import wyc.builder.WhileyBuilder;
-import wyc.io.WhileyFileLexer;
-import wyc.io.WhileyFileParser;
+import wyc.Activator;
+import wyc.builder.CompileTask;
 import wyc.lang.WhileyFile;
-import wyc.util.WycBuildTask;
-import wycc.lang.Pipeline;
-import wycc.lang.SyntaxError;
-import wycc.util.Logger;
-import wycc.util.Pair;
 import wycs.builders.Wyal2WycsBuilder;
-import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;
-import wycs.transforms.VerificationCheck;
-import wycs.util.WycsBuildTask;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyfs.util.VirtualRoot;
 import wyil.builders.Wyil2WyalBuilder;
 import wyil.lang.WyilFile;
-import wycc.lang.Attribute;
+import wybs.lang.Attribute;
 
 public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 
@@ -91,64 +73,76 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 	}
 
 	private String compile(String code, boolean verification) throws IOException, HttpException {
-		// Create registry and initialise root with the source file
-		WycBuildTask.Registry registry = new WycBuildTask.Registry();
+		Content.Registry registry = new Activator.Registry();
 		VirtualRoot root = new VirtualRoot(registry);
-		
 		Path.Entry<WhileyFile> srcFile = root.create(Trie.ROOT.append("main"), WhileyFile.ContentType);
 		// Write contents into source file
 		srcFile.outputStream().write(code.getBytes());
-		// Create project
+		// Create registry and initialise root with the source file
 		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 		roots.add(root);
 		StdProject project = new StdProject(roots);
-		// Create builder and add simple build rule
-		WhileyBuilder builder = new WhileyBuilder(project, new Pipeline(WycBuildTask.defaultPipeline));
-		builder.setLogger(new Logger.Default(System.err));
-		Content.Filter<WhileyFile> whileyIncludes = Content.filter("**", WhileyFile.ContentType);
-		project.add(new StdBuildRule(builder, root, whileyIncludes, null, root));
-		configureVerification(verification,root,project);
-		// Finally, do something?
-		ArrayList<Path.Entry<?>> delta = new ArrayList<>();
-		delta.add(srcFile);
+		addWhiley2WyilBuildRule(root,project);
+		if(verification) {
+			addVerificationBuildRules(root,project);
+		}
+		// Create project
 		HashMap<String, Object> result = new HashMap<String, Object>();
+		List<Path.Entry<WhileyFile>> entries = new ArrayList<>();
+		entries.add(srcFile);
 		try {
-			project.build(delta);
+			project.build(entries);
 			System.out.println(root.get(Content.filter("**", WyilFile.ContentType)));
 			result.put("result", "success");
 		} catch (SyntaxError e) {
-			e.printStackTrace();
 			Attribute.Source src = e.getElement().attribute(Attribute.Source.class);
 			EnclosingLine enclosing = readEnclosingLine(srcFile.inputStream(), src.start, src.end);
 			result.put("result", "errors");
 			result.put("errors", toErrorResponse(enclosing, e.getMessage()));
-		} catch(Exception e) {
-			e.printStackTrace();
-			throw new HttpException("");
+		} catch (Exception e) {
+			// now what?
+			throw new RuntimeException(e);
 		}
-		return toJsonString(result);		
+
+		return toJsonString(result);
 	}
 
-	private static void configureVerification(boolean verification, VirtualRoot root, StdProject project) {
-		if(verification) {
-			Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
-			Content.Filter<WyalFile> wyalIncludes = Content.filter("**", WyalFile.ContentType);
-			// First, handle the conversion of wyil to wyal
-
-			Wyil2WyalBuilder wyalBuilder = new Wyil2WyalBuilder(project);
-			wyalBuilder.setLogger(new Logger.Default(System.err));
-			project.add(new StdBuildRule(wyalBuilder, root,
-					wyilIncludes, null, root));
-
-			// Second, handle the conversion of wyal to wycs				
-			Pipeline<WycsFile> wycsPipeline = new Pipeline(WycsBuildTask.defaultPipeline);
-			wycsPipeline.setOption(VerificationCheck.class,"enable",verification);
-			Wyal2WycsBuilder wycsBuilder = new Wyal2WycsBuilder(project,wycsPipeline);
-			wycsBuilder.setLogger(new Logger.Default(System.err));
-			project.add(new StdBuildRule(wycsBuilder, root, wyalIncludes, null, root));
-		}
+	/**
+	 * Add the rule for compiling Whiley source files into WyIL files.
+	 *
+	 * @param project
+	 */
+	protected void addWhiley2WyilBuildRule(Path.Root root, StdProject project) {
+		// Configure build rules for normal compilation
+		Content.Filter<WhileyFile> whileyIncludes = Content.filter("**", WhileyFile.ContentType);
+		Content.Filter<WhileyFile> whileyExcludes = null;
+		// Rule for compiling Whiley to WyIL
+		CompileTask wyilBuilder = new CompileTask(project);
+		//wyilBuilder.setLogger(logger);
+		project.add(new StdBuildRule(wyilBuilder, root, whileyIncludes, whileyExcludes, root));
 	}
-	
+
+	/**
+	 * Add build rules necessary for compiling wyil binary files into wyal files
+	 * for verification.
+	 *
+	 * @param project
+	 */
+	protected void addVerificationBuildRules(Path.Root root, StdProject project) {
+		// Configure build rules for verification (if applicable)
+		Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
+		Content.Filter<WyilFile> wyilExcludes = null;
+		Content.Filter<WyalFile> wyalIncludes = Content.filter("**", WyalFile.ContentType);
+		Content.Filter<WyalFile> wyalExcludes = null;
+		// Rule for compiling WyIL to WyAL
+		Wyil2WyalBuilder wyalBuilder = new Wyil2WyalBuilder(project);
+		//wyalBuilder.setLogger(logger);
+		project.add(new StdBuildRule(wyalBuilder, root, wyilIncludes, wyilExcludes, root));
+		// Rule for compiling WyAL to WyCS
+		Wyal2WycsBuilder wycsBuilder = new Wyal2WycsBuilder(project);
+		project.add(new StdBuildRule(wycsBuilder, root, wyalIncludes, wyalExcludes, root));
+	}
+
 	private static ArrayList toErrorResponse(EnclosingLine enclosing, String message) {
 		ArrayList l = new ArrayList();
 		HashMap<String, Object> args = new HashMap<>();
@@ -165,7 +159,7 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 	/**
 	 * This is a simple hack for converting Java objects into JSON. It needs to
 	 * be replaced by a proper JSON library.
-	 * 
+	 *
 	 * @param o
 	 * @return
 	 */

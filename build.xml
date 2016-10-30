@@ -11,9 +11,8 @@
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/>
       <classpath>
-        <pathelement path="${WYC}"/>
         <pathelement path="${JWEBKIT}"/>	
-        <path refid="deps.classpath"/>
+        <path refid="MAVEN_DEPS"/>
       </classpath>      
     </javac>
   </target>
@@ -26,7 +25,6 @@
     <java classname="com.whileylabs.Main">
       <classpath>
 	<pathelement location="bin"/>
-        <pathelement path="${WYC}"/>
         <pathelement path="${JWEBKIT}"/>
         <path refid="deps.classpath"/>
       </classpath>

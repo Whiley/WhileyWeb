@@ -1,21 +1,13 @@
-<project name="BuildConfig" xmlns:maven="urn:maven-ant">
-  <!-- Get the root directory of the project by looking at the directory enclosing this file. -->
-  <dirname property="rootdir" file="${ant.file.BuildConfig}"/>
-  <!-- Set the current WhileyLabs version -->
-  <property name="version" value="0.4.0"/>
+<project name="BuildConfig" xmlns:artifact="urn:maven-ant">
   <!-- Load the Maven Ant tasks so that we can work with Maven repositories. -->
   <typedef uri="urn:maven-ant"
-           classpath="${rootdir}/lib/maven-ant-tasks-2.1.3.jar"
+           classpath="lib/maven-ant-tasks-2.1.3.jar"
            resource="org/apache/maven/artifact/ant/antlib.xml"/>
-
+  <!-- set pom file and dependencies -->
+  <artifact:pom id="mypom" file="pom.xml"/>
+  <artifact:dependencies pathId="MAVEN_DEPS" pomRefId="mypom" />    
+  <!-- Set the current WhileyLabs version -->
+  <property name="version" value="${mypom.version}"/>  
   <!-- Paths to required JARs -->
-  <property name="WYC" value="lib/wyc-all-v0.4.0.jar"/>
   <property name="JWEBKIT" value="lib/jwebkit-v0.1.0.jar"/>  
-  
-  <!-- Set the classpath for Junit and its dependencies -->
-  <maven:dependencies pathId="deps.classpath">
-    <dependency groupId="org.apache.httpcomponents" artifactId="httpcore" version="4.4.5"/>
-    <dependency groupId="org.apache.httpcomponents" artifactId="httpclient" version="4.5.2"/>
-    <dependency groupId="org.apache.commons" artifactId="commons-lang3" version="3.4"/>
-  </maven:dependencies>
 </project>
