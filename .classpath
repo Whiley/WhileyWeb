@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/HttpComponents"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/CommonsLang"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/WhileyCompiler"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JWebKit"/>
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
