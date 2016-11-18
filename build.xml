@@ -6,7 +6,7 @@
   <!-- ============================================== -->
 
   <target name="compile">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.7" target="1.7" includeantruntime="true">
+    <javac debug="true" debuglevel="vars,lines,source" source="1.8" target="1.8" includeantruntime="true">
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/>
@@ -21,12 +21,12 @@
   <!-- Start Server -->
   <!-- ============================================== -->
 
-  <target name="run">
-    <java classname="com.whileylabs.Main">
+  <target name="run" depends="compile">
+    <java classname="com.whileylabs.Main" error="run.err" fork="true">
       <classpath>
-	<pathelement location="bin"/>
+	<pathelement location="src"/>
         <pathelement path="${JWEBKIT}"/>
-        <path refid="deps.classpath"/>
+        <path refid="MAVEN_DEPS"/>
       </classpath>
     </java>
   </target>

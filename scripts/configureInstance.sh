@@ -8,9 +8,8 @@
 # Config
 # =====================================================================
 
-PACKAGES="openjdk-7-jdk git python-pip"
-PYTHON_LIBS="cherrypy mako"
-REPOSITORY="https://github.com/DavePearce/WhileyWeb.git"
+PACKAGES="openjdk-8-jdk git ant"
+REPOSITORY="https://github.com/Whiley/WhileyLabs.git"
 USER=ubuntu
 
 # =====================================================================
@@ -26,12 +25,6 @@ do
     apt-get install -y $PKG
 done
 
-# Add all required Python libraries packages
-for LIB in $PYTHON_LIBS
-do
-    pip install $LIB
-done
-
 # =====================================================================
 # User
 # =====================================================================
@@ -44,5 +37,5 @@ sudo -u $USER git clone $REPOSITORY
 sudo -u $USER cp WhileyWeb/example-config.py WhileyWeb/config.py
 
 # Launch the server...
-cd WhileyWeb
-./launcher.cgi
+cd WhileyLabs
+ant run

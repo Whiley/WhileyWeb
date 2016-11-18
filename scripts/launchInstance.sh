@@ -9,7 +9,7 @@
 # =====================================================================
 
 TYPE=t2.micro             # Free tier
-IMAGE=ami-9abea4fb        # Ubuntu-trusty 14.04
+IMAGE=ami-a9d276c9        # Ubuntu-Xenial 16.04
 SECURITY_GROUP=WhileyLabs
 KEYPAIR=WhileyLabs#1
 LAUNCH_SCRIPT=configureInstance.sh
