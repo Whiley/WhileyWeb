@@ -33,9 +33,6 @@ cd /home/$USER
 # Clone the WhileyLabs code
 sudo -u $USER git clone $REPOSITORY
 
-# Copy config file
-sudo -u $USER cp WhileyWeb/example-config.py WhileyWeb/config.py
-
 # Launch the server...
 cd WhileyLabs
 ant run
