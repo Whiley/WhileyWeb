@@ -24,8 +24,7 @@ import wybs.util.StdProject;
 import wyc.Activator;
 import wyc.builder.CompileTask;
 import wyc.lang.WhileyFile;
-import wycs.builders.Wyal2WycsBuilder;
-import wycs.syntax.WyalFile;
+import wyal.lang.WyalFile;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -79,7 +78,7 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 		// Write contents into source file
 		srcFile.outputStream().write(code.getBytes());
 		// Create registry and initialise root with the source file
-		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
+		ArrayList<Path.Root> roots = new ArrayList<>();
 		roots.add(root);
 		StdProject project = new StdProject(roots);
 		addWhiley2WyilBuildRule(root,project);
@@ -87,7 +86,7 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 			addVerificationBuildRules(root,project);
 		}
 		// Create project
-		HashMap<String, Object> result = new HashMap<String, Object>();
+		HashMap<String, Object> result = new HashMap<>();
 		List<Path.Entry<WhileyFile>> entries = new ArrayList<>();
 		entries.add(srcFile);
 		try {
@@ -136,11 +135,11 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 		Content.Filter<WyalFile> wyalExcludes = null;
 		// Rule for compiling WyIL to WyAL
 		Wyil2WyalBuilder wyalBuilder = new Wyil2WyalBuilder(project);
-		//wyalBuilder.setLogger(logger);
 		project.add(new StdBuildRule(wyalBuilder, root, wyilIncludes, wyilExcludes, root));
-		// Rule for compiling WyAL to WyCS
-		Wyal2WycsBuilder wycsBuilder = new Wyal2WycsBuilder(project);
-		project.add(new StdBuildRule(wycsBuilder, root, wyalIncludes, wyalExcludes, root));
+		//
+		wyal.tasks.CompileTask wyalBuildTask = new wyal.tasks.CompileTask(project);
+		wyalBuildTask.setVerify(true);
+		project.add(new StdBuildRule(wyalBuildTask, root, wyalIncludes, wyalExcludes, root));
 	}
 
 	private static ArrayList toErrorResponse(EnclosingLine enclosing, String message) {

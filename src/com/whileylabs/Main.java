@@ -25,7 +25,7 @@ import jwebkit.http.HttpFileHandler;
  */
 public class Main {
 
-	public static final int HTTP_PORT = 80;
+	public static final int HTTP_PORT = 8080;
 
 	public static final ContentType TEXT_JAVASCRIPT = ContentType.create("text/javascript");
 	public static final ContentType TEXT_CSS = ContentType.create("text/css");
@@ -67,6 +67,7 @@ public class Main {
 
     private static class Logger implements ExceptionLogger {
 
+		@Override
 		public void log(Exception ex) {
             if (ex instanceof SocketTimeoutException) {
                 System.err.println(ex.getMessage());

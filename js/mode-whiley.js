@@ -22,8 +22,8 @@ var WhileyHighlightRules = function() {
     var keywords = (
         "all|any|assert|assume|bool|break|byte|catch|case|catch|char|continue|" +
         "constant|debug|default|do|else|ensures|export|false|finite|for|" +
-        "function|from|if|import|in|int|is|method|native|new|no|null|package|" + 
-        "private|protected|public|real|requires|return|skip|some|string|" +
+        "function|fail|from|if|import|in|int|is|method|native|new|no|null|package|" + 
+        "private|protected|property|public|real|requires|return|skip|some|string|" +
         "switch|total|throw|throws|true|try|type|void|where|while"
     );
 
