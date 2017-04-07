@@ -86,6 +86,9 @@ function compile() {
     var console = document.getElementById("console");
     var verify = document.getElementById("verification");
     var request = { code: editor.getValue(), verify: verify.checked };
+    // Attempt to stash the current state
+    store(request);
+    //
     $.post(root_url + "/compile", request, function(response) {
         clearMessages();
         console.value = "";
@@ -112,6 +115,9 @@ function compile() {
 function run() {
     var console = document.getElementById("console");
     var request = { code: editor.getValue() };
+    // Attempt to stash the current state
+    store(request);
+    //
     $.post(root_url + "/run", request, function(response) {
         clearMessages();
         console.value = "";
@@ -149,6 +155,31 @@ function save() {
     $("#spinner").show();
 }
 
+/**
+ * Attempt to store from local storage
+ */
+function restore(defaultCode) {
+    if (typeof(localStorage) !== "undefined" && localStorage.getItem("whileylabs")) {
+	// Code for localStorage/sessionStorage.
+	return JSON.parse(localStorage.getItem("whileylabs"));
+    } else {
+	// No Storage support..
+	return {code: defaultCode, verify: false};
+    }
+}
+
+/**
+ * Save the current state in localstorage
+ */
+function store(request) {
+    if (typeof(localStorage) !== "undefined") {
+	// Code for localStorage/sessionStorage.
+	localStorage.setItem("whileylabs",JSON.stringify(request));
+    } else {
+	// No Storage support..
+    }
+}
+
 // Run this code when the page has loaded.
 $(document).ready(function() {
     ace.Range = require('ace/range').Range;
@@ -174,19 +205,9 @@ $(document).ready(function() {
         cursor: "default",
         minHeight: $("#code").height()
     });
-
-    // If there is an error, display the error message for 5 seconds.
-    if(error != "") {
-        var error_message = $("<div></div>");
-        error_message.text(error);
-        error_message.addClass("error");
-        error_message.addClass("message");
-        error_message.prependTo("#content");
-        error_message.show().delay(2000).fadeOut(500, function() {
-            // If the user should be redirected to the main page (due to invalid ID for example), do so.
-            if(redirect == "YES") {
-                window.location.replace(root_url + "/");
-            }
-        });
-    }
+    // Attempt to restore from previous state
+    var previousState = restore("Write code here...");
+    var verifyCheckBox = document.getElementById("verification");
+    editor.setValue(previousState.code);
+    verifyCheckBox.checked = previousState.verify;
 });
