@@ -49,17 +49,17 @@
     <dependency>
       <groupId>org.whiley</groupId>
       <artifactId>wycc</artifactId>
-      <version>LATEST</version>
+      <version>0.5.5</version>
     </dependency>
     <dependency>
       <groupId>org.whiley</groupId>
       <artifactId>wyc</artifactId>
-      <version>LATEST</version>
+      <version>0.4.9</version>
     </dependency>
     <dependency>
       <groupId>org.whiley</groupId>
       <artifactId>wytp</artifactId>
-      <version>LATEST</version>
+      <version>0.5.5</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

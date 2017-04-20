@@ -1,10 +1,12 @@
 package com.whileylabs;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -27,13 +29,16 @@ import wyc.lang.WhileyFile;
 import wyal.lang.WyalFile;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.util.JarFileRoot;
 import wyfs.util.Trie;
 import wyfs.util.VirtualRoot;
 import wyil.builders.Wyil2WyalBuilder;
 import wyil.lang.WyilFile;
+import wytp.provers.AutomatedTheoremProver;
 import wybs.lang.Attribute;
 
 public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
+	private static String WYRT_LIB = "lib/wyrt-v0.1.1.jar".replace('/',File.separatorChar);
 
 	public WhileyLabsCompiler() {
 		super(HttpMethodDispatchHandler.ALLOW_POST);
@@ -74,12 +79,15 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 	private String compile(String code, boolean verification) throws IOException, HttpException {
 		Content.Registry registry = new Activator.Registry();
 		VirtualRoot root = new VirtualRoot(registry);
+		// Configure root for standard library
+		JarFileRoot stdlib = new JarFileRoot(WYRT_LIB,registry);
 		Path.Entry<WhileyFile> srcFile = root.create(Trie.ROOT.append("main"), WhileyFile.ContentType);
 		// Write contents into source file
 		srcFile.outputStream().write(code.getBytes());
 		// Create registry and initialise root with the source file
 		ArrayList<Path.Root> roots = new ArrayList<>();
 		roots.add(root);
+		roots.add(stdlib);
 		StdProject project = new StdProject(roots);
 		addWhiley2WyilBuildRule(root,project);
 		if(verification) {
@@ -91,7 +99,6 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 		entries.add(srcFile);
 		try {
 			project.build(entries);
-			System.out.println(root.get(Content.filter("**", WyilFile.ContentType)));
 			result.put("result", "success");
 		} catch (SyntaxError e) {
 			Attribute.Source src = e.getElement().attribute(Attribute.Source.class);
@@ -137,7 +144,9 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 		Wyil2WyalBuilder wyalBuilder = new Wyil2WyalBuilder(project);
 		project.add(new StdBuildRule(wyalBuilder, root, wyilIncludes, wyilExcludes, root));
 		//
-		wyal.tasks.CompileTask wyalBuildTask = new wyal.tasks.CompileTask(project);
+		wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem();
+		AutomatedTheoremProver prover = new AutomatedTheoremProver(typeSystem);
+		wyal.tasks.CompileTask wyalBuildTask = new wyal.tasks.CompileTask(project,typeSystem,prover);
 		wyalBuildTask.setVerify(true);
 		project.add(new StdBuildRule(wyalBuildTask, root, wyalIncludes, wyalExcludes, root));
 	}
