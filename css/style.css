@@ -9,6 +9,17 @@ body {
     background: #cccccc;
 }
 
+
+#container {
+    margin: 2em auto;
+    padding: 0px;
+    width: 1024px;
+    text-align: left;
+    border: 1px solid black;
+    background: #ffffff;
+    box-shadow: 2px 2px 5px 0 #000;
+}
+
 #header {
     width: 100%;
     background: #dddddd;
@@ -21,16 +32,6 @@ body {
     padding: 0px;
     width: 1024px;
     text-align: left;
-}
-
-#container {
-    margin: 2em auto;
-    padding: 0px;
-    width: 1024px;
-    text-align: left;
-    border: 1px solid black;
-    background: #ffffff;
-    box-shadow: 2px 2px 5px 0 #000;
 }
 
 #content {
