@@ -144,7 +144,7 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 		Wyil2WyalBuilder wyalBuilder = new Wyil2WyalBuilder(project);
 		project.add(new StdBuildRule(wyalBuilder, root, wyilIncludes, wyilExcludes, root));
 		//
-		wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem();
+		wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem(project);
 		AutomatedTheoremProver prover = new AutomatedTheoremProver(typeSystem);
 		wyal.tasks.CompileTask wyalBuildTask = new wyal.tasks.CompileTask(project,typeSystem,prover);
 		wyalBuildTask.setVerify(true);
