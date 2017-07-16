@@ -26,7 +26,11 @@ import wybs.util.StdProject;
 import wyc.Activator;
 import wyc.builder.CompileTask;
 import wyc.lang.WhileyFile;
+import wyal.lang.NameResolver;
 import wyal.lang.WyalFile;
+import wyal.util.Interpreter;
+import wyal.util.SmallWorldDomain;
+import wyal.util.WyalFileResolver;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.JarFileRoot;
@@ -35,7 +39,9 @@ import wyfs.util.VirtualRoot;
 import wyil.builders.Wyil2WyalBuilder;
 import wyil.lang.WyilFile;
 import wytp.provers.AutomatedTheoremProver;
+import wytp.types.extractors.TypeInvariantExtractor;
 import wybs.lang.Attribute;
+import wybs.lang.SyntacticElement;
 
 public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 	private static String WYRT_LIB = "lib/wyrt-v0.1.1.jar".replace('/',File.separatorChar);
@@ -51,17 +57,20 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 		List<NameValuePair> params = URLEncodedUtils.parse(entity);
 		String code = null;
 		boolean verification=false;
+		boolean counterexamples=false;
 		for (NameValuePair p : params) {
 			if (p.getName().equals("code")) {
 				code = p.getValue();
 			} else if(p.getName().equals("verify")) {
 				verification = Boolean.parseBoolean(p.getValue());
+			} else if(p.getName().equals("counterexamples")) {
+				counterexamples = Boolean.parseBoolean(p.getValue());
 			}
 		}
 		if (code == null) {
 			response.setStatusCode(HttpStatus.SC_BAD_REQUEST);
 		} else {
-			String r = compile(code,verification);
+			String r = compile(code,verification,counterexamples);
 			response.setEntity(new StringEntity(r)); // ContentType.APPLICATION_JSON fails?
 			response.setStatusCode(HttpStatus.SC_OK);
 		}
@@ -76,7 +85,7 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 		}
 	}
 
-	private String compile(String code, boolean verification) throws IOException, HttpException {
+	private String compile(String code, boolean verification, boolean counterexamples) throws IOException, HttpException {
 		Content.Registry registry = new Activator.Registry();
 		VirtualRoot root = new VirtualRoot(registry);
 		// Configure root for standard library
@@ -101,10 +110,18 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 			project.build(entries);
 			result.put("result", "success");
 		} catch (SyntaxError e) {
-			Attribute.Source src = e.getElement().attribute(Attribute.Source.class);
+			SyntacticElement element = e.getElement();
+			Attribute.Source src = element.attribute(Attribute.Source.class);
 			EnclosingLine enclosing = readEnclosingLine(srcFile.inputStream(), src.start, src.end);
 			result.put("result", "errors");
-			result.put("errors", toErrorResponse(enclosing, e.getMessage()));
+			// Generate counterexample (if requested)
+			String counterexample = null;
+			if(counterexamples && element instanceof WyalFile.Declaration.Assert) {
+				WyalFile.Declaration.Assert assertion = (WyalFile.Declaration.Assert) element;
+				counterexample = findCounterexample(assertion,project);
+			}
+			result.put("errors", toErrorResponse(enclosing, e.getMessage(), counterexample));
+
 		} catch (Exception e) {
 			// now what?
 			throw new RuntimeException(e);
@@ -151,7 +168,7 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 		project.add(new StdBuildRule(wyalBuildTask, root, wyalIncludes, wyalExcludes, root));
 	}
 
-	private static ArrayList toErrorResponse(EnclosingLine enclosing, String message) {
+	private static ArrayList toErrorResponse(EnclosingLine enclosing, String message, String counterexample) {
 		ArrayList l = new ArrayList();
 		HashMap<String, Object> args = new HashMap<>();
 		args.put("filename", "main.whiley");
@@ -160,10 +177,29 @@ public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
 		args.put("end", enclosing.columnEnd());
 		args.put("text", message);
 		args.put("context", Collections.EMPTY_LIST);
+		if(counterexample != null) {
+			args.put("counterexample",counterexample);
+		}
 		l.add(args);
 		return l;
 	}
 
+	public String findCounterexample(WyalFile.Declaration.Assert assertion, StdProject project) {
+		// FIXME: it doesn't feel right creating new instances here.
+		NameResolver resolver = new WyalFileResolver(project);
+		TypeInvariantExtractor extractor = new TypeInvariantExtractor(resolver);
+		Interpreter interpreter = new Interpreter(new SmallWorldDomain(resolver), resolver, extractor);
+		try {
+			Interpreter.Result result = interpreter.evaluate(assertion);
+			if(!result.holds()) {
+				// FIKXME: could tidy this up!!
+				return result.getEnvironment().toString();
+			}
+		} catch(Interpreter.UndefinedException e) {
+			// do nothing for now
+		}
+		return null;
+	}
 	/**
 	 * This is a simple hack for converting Java objects into JSON. It needs to
 	 * be replaced by a proper JSON library.

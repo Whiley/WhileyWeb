@@ -41,12 +41,17 @@ function showErrors(errors) {
  * returned from the server.
  */
 function markError(error) {
+    var errorText = error.text.replace("\\n","\n");
+    if(error.counterexample) {
+	errorText = errorText + "\n\ncounterexample: " + error.counterexample;
+    }
+    //
     if(error.start !== "" && error.end !== "" && error.line !== "") {
 	// First, add error markers
         editor.getSession().setAnnotations([{
             row: error.line - 1,
             column: error.start,
-            text: error.text.replace("\\n","\n"),
+            text: errorText,
             type: "error"
         }]);
 	underScoreError(error,"error-message","error");
@@ -55,7 +60,7 @@ function markError(error) {
 	    underScoreError(error.context[i],"context-message","error");
 	}
     } else {
-        addMessage("error", error.text);
+        addMessage("error", errorText);
     }
 }
 
@@ -85,7 +90,12 @@ function clearErrors() {
 function compile() {
     var console = document.getElementById("console");
     var verify = document.getElementById("verification");
-    var request = { code: editor.getValue(), verify: verify.checked };
+    var counterexamples = document.getElementById("counterexamples");
+    var request = {
+	code: editor.getValue(),
+	verify: verify.checked,
+	counterexamples: counterexamples.checked
+    };
     // Attempt to stash the current state
     store(request);
     //
