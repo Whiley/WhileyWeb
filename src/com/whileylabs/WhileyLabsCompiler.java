@@ -44,7 +44,7 @@ import wybs.lang.Attribute;
 import wybs.lang.SyntacticElement;
 
 public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
-	private static String WYRT_LIB = "lib/wyrt-v0.1.1.jar".replace('/',File.separatorChar);
+	private static String WYRT_LIB = "lib/wystd-v0.2.1.jar".replace('/',File.separatorChar);
 
 	public WhileyLabsCompiler() {
 		super(HttpMethodDispatchHandler.ALLOW_POST);

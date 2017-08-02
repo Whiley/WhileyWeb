@@ -25,7 +25,7 @@ import jwebkit.http.HttpFileHandler;
  */
 public class Main {
 
-	public static final int HTTP_PORT = 8081;
+	public static final int HTTP_PORT = 8080;
 
 	public static final ContentType TEXT_JAVASCRIPT = ContentType.create("text/javascript");
 	public static final ContentType TEXT_CSS = ContentType.create("text/css");
