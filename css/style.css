@@ -45,7 +45,23 @@ body {
     font-family: "Courier New", Courier, monospace;
     font-size: 11pt;
     background-color: #f9f9f9;
-    color: #d5c397;
+    color: #888888;
+    width: 100%;
+    height: 100px;
+    min-height: 100px;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: 12px;    
+    resize: vertical;
+    margin-top: 1em;
+    padding: 0.5em;
+}
+
+#bin {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 11pt;
+    background-color: #f9f9f9;
+    color: #888888;
     width: 100%;
     height: 100px;
     min-height: 100px;
@@ -81,12 +97,13 @@ body {
 /* ====================================================== */
 
 #content h1 {
-    margin: 0 0 20 0;
+    margin: 0px 0px 20px 0px;
     font-size: 16pt;
     font-weight: normal;
     color: #1b6987;
     border-bottom: 1px solid #ccc;
 }
+
 
 #toolbar {
     margin-top: 0.5em;
@@ -105,9 +122,15 @@ body {
     font-size: 16px;
 }
 
-#toolbar button:hover {
+#toolbar button:active {
     background-color: #c5b387;
     color: white;
+}
+
+#toolbar button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    color: #888888;    
 }
 
 #toolbar #spinner {

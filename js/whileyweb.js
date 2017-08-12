@@ -89,8 +89,12 @@ function clearErrors() {
  */
 function compile() {
     var console = document.getElementById("console");
+    // binArea is where generated JavaScript is place
+    var binArea = document.getElementById("bin");
+    // Get configuration flags
     var verify = document.getElementById("verification");
     var counterexamples = document.getElementById("counterexamples");
+    // Construct request
     var request = {
 	code: editor.getValue(),
 	verify: verify.checked,
@@ -105,64 +109,80 @@ function compile() {
         $("#spinner").hide();
         var response = $.parseJSON(response);
         if(response.result == "success") {
+	    // Store generated JavaScript in binary area
+	    binArea.value = response.js;
+	    // Enable run button
+	    enableRunButton(true);
+	    // Clear all error markers
             clearErrors(true);
-            addMessage("success", "Compiled successfully.");
+	    // Show green success message
+            addMessage("success", "Compiled successfully!");
         } else if(response.result == "errors") {
             var errors = response.errors;
+	    // Clear any generated JavaScript from binary area
+	    binArea.value = "";
+	    // Disable run button
+	    enableRunButton(false);
+	    // Display error message markers
             showErrors(errors);
+	    // Show error message itself
             addMessage("error", "Compilation failed: " + errors.length + " error" + (errors.length > 1 ? "s." : "."));
-        } else if(response.result == "error") {
-            clearErrors(true);
-            addMessage("error", response.error);
         }
     });
     $("#spinner").show();
+}
+
+function println_n6string(str) {
+    var console = document.getElementById("console");
+    console.value = str;
 }
 
 /**
  * Compile and run a given snippet of Whiley code.
  */
 function run() {
+    var bin = document.getElementById("bin");
     var console = document.getElementById("console");
-    var request = { code: editor.getValue() };
-    // Attempt to stash the current state
-    store(request);
-    //
-    $.post(root_url + "/run", request, function(response) {
-        clearMessages();
-        console.value = "";
-        $("#spinner").hide();
-        var response = $.parseJSON(response);
-        if(response.result == "success") {
-            clearErrors(true);
-            addMessage("success", "Compiled successfully. Running...");
-            setTimeout(function() {console.value = response.output;}, 500);
-        } else if(response.result == "errors") {
-            var errors = response.errors;
-            showErrors(errors);
-            addMessage("error", "Compilation failed: " + errors.length + " error" + (errors.length > 1 ? "s." : "."));
-        } else if(response.result == "error") {
-            clearErrors(true);
-            addMessage("error", response.error);
-        }
-    });
-    $("#spinner").show();
+    eval(bin.value);
+    eval("main();");
 }
 
 /**
  * Save a given snippet of Whiley code.
  */
 function save() {
-    var request = { code: editor.getValue() };
-    $.post(root_url + "/save", request, function(response) {
-        clearMessages();
-        var response = $.parseJSON(response);
-        $("#spinner").hide();
-        addMessage("success", "Saved program as " + response.id + ".", function() {
-            window.location.replace("?id=" + response.id);
-        });
-    });
-    $("#spinner").show();
+   
+}
+
+/**
+ * Toggle display of generated JavaScript.
+ */
+function showConsole(enable) {
+    document.getElementById("showConsole").checked = enable;    
+    if(enable) {
+	document.getElementById("console").style.display = "block";
+    } else {
+	document.getElementById("console").style.display = "none";
+    }
+}
+
+/**
+ * Toggle display of generated JavaScript.
+ */
+function showJavaScript(enable) {
+    document.getElementById("showJavaScript").checked = enable;
+    if(enable) {
+	document.getElementById("bin").style.display = "block";
+    } else {
+	document.getElementById("bin").style.display = "none";
+    }
+}
+
+/**
+ * Enable or disable run button
+ */
+function enableRunButton(enable) {
+    document.getElementById("run").disabled = !enable;
 }
 
 /**
@@ -215,6 +235,11 @@ $(document).ready(function() {
         cursor: "default",
         minHeight: $("#code").height()
     });
+    // Disable run button
+    enableRunButton(false);
+    // Hide Console and JavaScript areas
+    showConsole(false);    
+    showJavaScript(false);
     // Attempt to restore from previous state
     var previousState = restore("Write code here...");
     var verifyCheckBox = document.getElementById("verification");
