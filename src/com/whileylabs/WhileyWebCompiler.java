@@ -46,10 +46,10 @@ import wytp.types.extractors.TypeInvariantExtractor;
 import wybs.lang.Attribute;
 import wybs.lang.SyntacticElement;
 
-public class WhileyLabsCompiler extends HttpMethodDispatchHandler {
+public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 	private static String WYRT_LIB = "lib/wystd-v0.2.1.jar".replace('/',File.separatorChar);
 
-	public WhileyLabsCompiler() {
+	public WhileyWebCompiler() {
 		super(HttpMethodDispatchHandler.ALLOW_POST);
 	}
 

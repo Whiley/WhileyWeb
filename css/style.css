@@ -24,13 +24,13 @@ body {
     border-radius: 12px;
     border: none;
     background: #ffffff;
-    box-shadow: 2px 2px 5px 0 #000;
+    box-shadow: 2px 2px 5px 0 #000;    
 }
 
 #content {
     padding: 1em;
     font-family: 'Pontano Sans', Verdana, Helvetica, sans-serif;
-    font-size: 11pt;
+    font-size: 11pt;    
 }
 
 #code {
@@ -38,7 +38,7 @@ body {
     height: 300px;
     border-radius: 12px;
     background-color: #f9f9f9;
-    resize: vertical;    
+    resize: vertical;
 }
 
 #console {
