@@ -76,15 +76,20 @@ public class FrontPage extends HttpMethodDispatchHandler {
 		writer.println(
 				"\t\t\t<button type='button' onClick='compile();' title='Compile your program to check it is correct.'>Compile</button>");
 		writer.println(
-				"\t\t\t<button type='button' onClick='run();' title='Run your program to produce some output!'>Run</button>");
+				"\t\t\t<button id = 'run' type='button' onClick='run();' title='Run your program to produce some output!'>Run</button>");
 		writer.println(
 				"\t\t\t<input id='verification' type='checkBox' checked='checked' title='Enable or disable compile-time verification'>Enable Verification</input>");
 		writer.println(
 				"\t\t\t<input id='counterexamples' type='checkBox' title='Enable or disable counterexample generation'>Generate Counterexamples</input>");
+		writer.println(
+				"\t\t\t<input id='showConsole' type='checkBox' onclick='showConsole(this.checked);' title='Show Console'>Show Console</input>");
+		writer.println(
+				"\t\t\t<input id='showJavaScript' type='checkBox' onclick='showJavaScript(this.checked);' title='Show generated JavaScript'>Show JavaScript</input>");
 		writer.println("<img id='spinner' src='images/loading.gif' />");
 		writer.println("\t\t\t</section>");
 		writer.println("\t\t<div id='messages'></div>");
 		writer.println("\t\t<textarea id='console' readonly='readonly'></textarea>");
+		writer.println("\t\t<textarea id='bin' readonly='readonly'></textarea>");
 		writer.println("\t\t</div>");
 		writer.println("\t</div>");
 	}
