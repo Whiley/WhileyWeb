@@ -2,7 +2,7 @@
 
 A simple web IDE is available which allows you to run Whiley on your computer using a web browser.  The following screenshot illustrates:
 
-<img src="http://whiley.org/wp-content/uploads/2017/06/wyweb.png"/>
+<img src="http://whiley.org/wp-content/uploads/2017/06/wyweb2.png"/>
 
 To setup the Web IDE, simple clone the WhileyWeb repository from github:
 ```
