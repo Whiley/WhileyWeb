@@ -67,12 +67,12 @@ public class FrontPage extends HttpMethodDispatchHandler {
 	public void writeBody(PrintWriter writer) {
 		writer.println("<div id='container'>");
 		writer.println("\t<div id='content'>");
-		writer.println(
-				"\t\t<p>From this page, you can run Whiley programs in your browser!  For more on Whiley, visit <a href='http://whiley.org'>whiley.org</a>.</p>");
+//		writer.println(
+//				"\t\t<p>From this page, you can run Whiley programs in your browser!  For more on Whiley, visit <a href='http://whiley.org'>whiley.org</a>.</p>");
 		writer.println("\t\t<div id='code'>// Write your Whiley program here</div>");
 		writer.println("\t\t\t<section id='toolbar'>");
-		writer.println(
-				"\t\t\t<button type='button' onClick='save();' title='Create a permalink of this program to share with others.'>Share</button>");
+//		writer.println(
+//				"\t\t\t<button type='button' onClick='save();' title='Create a permalink of this program to share with others.'>Share</button>");
 		writer.println(
 				"\t\t\t<button type='button' onClick='compile();' title='Compile your program to check it is correct.'>Compile</button>");
 		writer.println(

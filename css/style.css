@@ -6,18 +6,7 @@ body {
     margin: 0px;
     padding: 0px;
     font-family: "helvetica";
-    background: #cccccc;
-}
-
-
-#container {
-    margin: 2em auto;
-    padding: 0px;
-    width: 1024px;
-    text-align: left;
-    border: 1px solid black;
-    background: #ffffff;
-    box-shadow: 2px 2px 5px 0 #000;
+    background: #d5c397;
 }
 
 #header {
@@ -27,17 +16,45 @@ body {
     padding: 1em;
 }
 
-#menu {
-    margin: 0px auto;
+#container {
+    margin: 2em auto;
     padding: 0px;
     width: 1024px;
     text-align: left;
+    border-radius: 12px;
+    border: none;
+    background: #ffffff;
+    box-shadow: 2px 2px 5px 0 #000;
 }
 
 #content {
     padding: 1em;
     font-family: 'Pontano Sans', Verdana, Helvetica, sans-serif;
     font-size: 11pt;
+}
+
+#code {
+    border: 1px solid #ddd;
+    height: 300px;
+    border-radius: 12px;
+    background-color: #f9f9f9;
+    resize: vertical;    
+}
+
+#console {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 11pt;
+    background-color: #f9f9f9;
+    color: #d5c397;
+    width: 100%;
+    height: 100px;
+    min-height: 100px;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: 12px;    
+    resize: vertical;
+    margin-top: 1em;
+    padding: 0.5em;
 }
 
 .message {
@@ -71,34 +88,26 @@ body {
     border-bottom: 1px solid #ccc;
 }
 
-#code {
-    border: 1px solid #ddd;
-    height: 300px;
-}
-
-#console {
-    font-family: "Courier New", Courier, monospace;
-    font-size: 11pt;
-    background-color: #111111;
-    color: #eeeeee;
-    width: 100%;
-    height: 100px;
-    min-height: 100px;
-    box-sizing: border-box;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    border: 1px solid #ddd;
-    resize: vertical;
-    margin-top: 1em;
-    padding: 0.5em;
-}
-
 #toolbar {
     margin-top: 0.5em;
 }
 
 #toolbar button {
     font-size: 11pt;
+    background-color: #e5d3a7;
+    border-radius: 12px;
+    border: none;
+    color: #000000;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+}
+
+#toolbar button:hover {
+    background-color: #c5b387;
+    color: white;
 }
 
 #toolbar #spinner {
@@ -123,22 +132,4 @@ body {
     text-decoration: none;
     border-bottom: 2px goldenrod dotted;
     position: absolute;
-}
-
-/*
- * Resize handle for code area.
- */
-.ui-resizable-handle {
-	position: absolute;
-	font-size: 0.1px;
-	display: block;
-}
-.ui-resizable-s {
-	cursor: default;
-	height: 8px;
-	width: 8px;
-	bottom: 0;
-	right: 0;
-	background: url("../images/resizable.png");
-	background-repeat: no-repeat;
 }
