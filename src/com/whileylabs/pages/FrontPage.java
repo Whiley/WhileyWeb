@@ -65,6 +65,7 @@ public class FrontPage extends HttpMethodDispatchHandler {
 	}
 
 	public void writeBody(PrintWriter writer) {
+		writer.println("<body>");
 		writer.println("<div id='container'>");
 		writer.println("\t<div id='content'>");
 //		writer.println(
@@ -92,5 +93,6 @@ public class FrontPage extends HttpMethodDispatchHandler {
 		writer.println("\t\t<textarea id='bin' readonly='readonly'></textarea>");
 		writer.println("\t\t</div>");
 		writer.println("\t</div>");
+		writer.println("</body>");
 	}
 }
