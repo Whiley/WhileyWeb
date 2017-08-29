@@ -128,10 +128,10 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 				counterexample = findCounterexample(assertion,project);
 			}
 			result.put("errors", toErrorResponse(enclosing, e.getMessage(), counterexample));
-
 		} catch (Exception e) {
 			// now what?
-			throw new RuntimeException(e);
+			result.put("result", "exception");
+			result.put("text", e.getMessage());
 		}
 
 		return toJsonString(result);

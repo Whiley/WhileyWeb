@@ -127,7 +127,9 @@ function compile() {
             showErrors(errors);
 	    // Show error message itself
             addMessage("error", "Compilation failed: " + errors.length + " error" + (errors.length > 1 ? "s." : "."));
-        }
+        } else if(response.result == "exception") {
+	    addMessage("error", "Internal failure: " + response.text);
+	}
     });
     $("#spinner").show();
 }
