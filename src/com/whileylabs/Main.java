@@ -5,6 +5,7 @@ import java.net.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.http.*;
 import org.apache.http.config.SocketConfig;
@@ -25,7 +26,7 @@ import jwebkit.http.HttpFileHandler;
  */
 public class Main {
 
-	public static final int HTTP_PORT = 8080;
+	public static final int[] HTTP_PORTS = {80,8080,8081};
 
 	public static final ContentType TEXT_JAVASCRIPT = ContentType.create("text/javascript");
 	public static final ContentType TEXT_CSS = ContentType.create("text/css");
@@ -34,35 +35,54 @@ public class Main {
 	// =======================================================================
 	// Main Entry Point
 	// =======================================================================
-	public static void main(String[] argc) throws SQLException {
+	public static void main(String[] argc) {
 //		Connection connection = getDatabaseConnection();
 //		SqlDatabase db = new SqlDatabase(connection);
 //		db.bindTable("users", new SqlTable.Column("name", SqlType.VARCHAR(10)));
 
-		SocketConfig socketConfig = SocketConfig.custom()
-				.setSoTimeout(15000)
-				.setTcpNoDelay(true)
-				.build();
-
-		HttpServer server = ServerBootstrap.bootstrap()
-				.setListenerPort(HTTP_PORT)
-				.setServerInfo("Test/1.1")
-				.setSocketConfig(socketConfig)
-				.setExceptionLogger(new Logger())
-				.registerHandler("/css/*", new HttpFileHandler(new File("."),TEXT_CSS))
-				.registerHandler("/js/*", new HttpFileHandler(new File("."),TEXT_JAVASCRIPT))
-				.registerHandler("*.png", new HttpFileHandler(new File("."),IMAGE_PNG))
-				.registerHandler("*.gif", new HttpFileHandler(new File("."),IMAGE_GIF))
-				.registerHandler("/compile", new WhileyWebCompiler())
-				.registerHandler("/", new FrontPage())
-				.create();
-
 		try {
+			HttpServer server = startWebServer();
 			server.start();
-			//server.awaitTermination(-1, TimeUnit.MILLISECONDS);
-		} catch(IOException e) {
+			server.awaitTermination(-1, TimeUnit.MILLISECONDS);
+		} catch(Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+
+	public static HttpServer startWebServer() throws IOException {
+		// Construct appropriate configuration for socket over which HTTP
+		// server will run.
+		SocketConfig socketConfig = SocketConfig.custom().setSoTimeout(1500).build();
+		// Set port number from which we'll try to run the server. If this port
+		// is taken, we'll try the next one and the next one, until we find a
+		// match.
+		int portIndex = 0;
+		//
+		while (portIndex < HTTP_PORTS.length) {
+			int port = HTTP_PORTS[portIndex++];
+			try {
+				// Construct HTTP server object, and connect pages to routes
+				HttpServer server = ServerBootstrap.bootstrap().setListenerPort(port).setSocketConfig(socketConfig)
+						.setExceptionLogger(new Logger())
+						.registerHandler("/css/*", new HttpFileHandler(new File("."),TEXT_CSS))
+						.registerHandler("/js/*", new HttpFileHandler(new File("."),TEXT_JAVASCRIPT))
+						.registerHandler("*.png", new HttpFileHandler(new File("."),IMAGE_PNG))
+						.registerHandler("*.gif", new HttpFileHandler(new File("."),IMAGE_GIF))
+						.registerHandler("/compile", new WhileyWebCompiler())
+						.registerHandler("/", new FrontPage())
+						.create();
+				// Attempt to start server
+				server.start();
+				System.out.println("WhileyLabs running on port " + port + ".");
+				return server;
+			} catch (BindException e) {
+				System.out.println("Port " + port + " in use by another application.");
+			}
+		}
+		System.out.println("Failed starting HTTP server.");
+		System.exit(-1);
+		return null;
 	}
 
     private static class Logger implements ExceptionLogger {

@@ -60,6 +60,8 @@ public class FrontPage extends HttpMethodDispatchHandler {
 		writer.println("<script type=\"text/javascript\" src=\"js/mode-whiley.js\"></script>");
 		writer.println("<script type=\"text/javascript\">var root_url = \"\"</script>");
 	    writer.println("<script type=\"text/javascript\" src=\"js/whileyweb.js\"></script>");
+	    writer.println("<script type=\"text/javascript\" src=\"js/wy.js\"></script>");
+	    writer.println("<script type=\"text/javascript\" src=\"js/wystd.js\"></script>");
 		writer.println("</head>");
 
 	}
