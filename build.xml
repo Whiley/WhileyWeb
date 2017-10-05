@@ -1,4 +1,4 @@
-<project name="whileylabs" default="compile">
+<project name="whileyweb" default="compile">
   <import file="config.xml"/>
 
   <!-- ============================================== -->
@@ -22,7 +22,7 @@
   <!-- ============================================== -->
 
   <target name="run" depends="compile">
-    <java classname="com.whileylabs.Main" error="run.err" fork="true">
+    <java classname="com.whileyweb.Main" error="run.err" fork="true">
       <classpath>
 	<pathelement location="src"/>
         <pathelement path="${JWEBKIT}"/>
