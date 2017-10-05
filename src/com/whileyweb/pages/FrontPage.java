@@ -1,4 +1,4 @@
-package com.whileylabs.pages;
+package com.whileyweb.pages;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

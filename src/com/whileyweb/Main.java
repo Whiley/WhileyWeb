@@ -1,4 +1,4 @@
-package com.whileylabs;
+package com.whileyweb;
 
 import java.io.*;
 import java.net.*;
@@ -13,7 +13,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.impl.bootstrap.HttpServer;
 import org.apache.http.impl.bootstrap.ServerBootstrap;
 
-import com.whileylabs.pages.FrontPage;
+import com.whileyweb.pages.FrontPage;
 
 import jwebkit.http.HttpFileHandler;
 
@@ -74,7 +74,7 @@ public class Main {
 						.create();
 				// Attempt to start server
 				server.start();
-				System.out.println("WhileyLabs running on port " + port + ".");
+				System.out.println("WhileyWeb running on port " + port + ".");
 				return server;
 			} catch (BindException e) {
 				System.out.println("Port " + port + " in use by another application.");
