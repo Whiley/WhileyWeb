@@ -1,5 +1,13 @@
 // Global reference to the code editor.
 var editor;
+var examples = [
+    // Hello World
+    "import std::io\nimport std::ascii\n\nmethod main():\n    io::println(\"hello world\")",
+    // Absolute Function
+    "function abs(int x) -> (int r)\nensures r >= 0\nensures (r == x) || (r == -x):\n    //\n    if x >= 0:\n        return x\n    else:\n        return -x",
+    // IndexOf Function
+    "type nat is (int x) where x >= 0\n\nfunction indexOf(int[] items, int item) -> (int r)\n// If valid index returned, element matches item\nensures r >= 0 ==> items[r] == item\n// If invalid index return, no element matches item\nensures r <  0 ==> all { i in 0..|items| | items[i] != item }\n// Return value is between -1 and size of items\nensures r >= -1 && r < |items|:\n    //\n    nat i = 0\n    while i < |items|\n        where all { k in 0 .. i | items[k] != item }:\n        //    \n        if items[i] == item:\n            return i\n        i = i + 1\n    //\n    return -1"
+];
 
 /**
  * Add a new message to the message list above the console.
@@ -180,6 +188,10 @@ function showJavaScript(enable) {
     }
 }
 
+function showExample(eg) {
+    editor.setValue(examples[eg]);
+}
+
 /**
  * Enable or disable run button
  */
@@ -196,7 +208,7 @@ function restore(defaultCode) {
 	return JSON.parse(localStorage.getItem("whileylabs"));
     } else {
 	// No Storage support..
-	return {code: defaultCode, verify: false};
+	return {code: examples[0], verify: false};
     }
 }
 
@@ -225,6 +237,7 @@ $(document).ready(function() {
     editor.setHighlightActiveLine(false);
     editor.setShowFoldWidgets(false);
     editor.setShowPrintMargin(false);
+    editor.setAutoScrollEditorIntoView(true);    
     editor.getSession().setUseSoftTabs(true);
     editor.getSession().setTabSize(4);
     editor.markers = [];
