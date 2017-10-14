@@ -3,7 +3,7 @@
 /* ====================================================== */
 
 body {
-    margin: 0px;
+    margin: 0;
     padding: 0px;
     font-family: "helvetica";
     background: #d5c397;
@@ -35,10 +35,9 @@ body {
 
 #code {
     border: 1px solid #ddd;
-    height: 600px;
+    height: 400px;
     border-radius: 12px;
     background-color: #f9f9f9;
-    resize: vertical;
 }
 
 #console {
@@ -96,6 +95,49 @@ body {
 /* Editor Settings */
 /* ====================================================== */
 
+nav.menubar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    background-color: #f2f2f2;
+    z-index: 5;
+}
+nav.menubar > ul {
+    position: fixed;
+    width: 100%;
+    left: 0;
+    top: 0;
+}
+nav.menubar a {
+    display: block;
+    padding: 10px 10px;
+    text-align: left;
+    color: #000000;
+    text-decoration: none;
+}
+nav.menubar a:hover, a:active {
+    background-color: #fff;
+    color: #c00;
+}
+nav.menubar > ul > li {
+    display: inline-block;
+}
+nav.menubar > ul ul {
+    position: absolute;
+    display: none;
+    box-shadow: 0px 8px 16px 0px #999999;
+}
+nav.menubar ul > li:hover ul {
+    display: block;
+}
+nav.menubar > ul > li > ul a {
+    min-width: 160px;
+}
+
+/* ====================================================== */
+/* Editor Settings */
+/* ====================================================== */
+
 #content h1 {
     margin: 0px 0px 20px 0px;
     font-size: 16pt;
@@ -104,13 +146,27 @@ body {
     border-bottom: 1px solid #ccc;
 }
 
-
-#toolbar {
+#cmdbar {
+    display: inline-block;
+    vertical-align: middle;
     margin-top: 0.5em;
 }
 
-#toolbar button {
-    font-size: 11pt;
+#configbar {
+    display: inline-block;
+    font-size: 10pt;
+    vertical-align: middle;
+}
+
+#egbar {
+    float: right;
+    font-weight: bold;    
+    margin-top: 0.5em;
+    font-size: 10pt;
+}
+
+#cmdbar button {
+    font-size: 12pt;
     background-color: #e5d3a7;
     border-radius: 12px;
     border: none;
@@ -119,21 +175,20 @@ body {
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    font-size: 16px;
 }
 
-#toolbar button:active {
+#cmdbar button:active {
     background-color: #c5b387;
     color: white;
 }
 
-#toolbar button:disabled {
+#cmdbar button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     color: #888888;    
 }
 
-#toolbar #spinner {
+#spinner {
     display: none;
     vertical-align: middle;
     margin: 1px;
@@ -155,4 +210,23 @@ body {
     text-decoration: none;
     border-bottom: 2px goldenrod dotted;
     position: absolute;
+}
+
+/*
+ * Resize handle for code area.
+ */
+.ui-resizable-handle {
+	position: absolute;
+	font-size: 0.1px;
+	display: block;
+}
+.ui-resizable-s {
+	cursor: row-resize;
+	height: 16px;
+	width: 16px;
+	bottom: 0;
+	right: 0;
+	background: url("../images/resizable.png");
+	background-repeat: no-repeat;
+	background-size: 80%;
 }
