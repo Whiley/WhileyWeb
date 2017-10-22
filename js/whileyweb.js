@@ -226,6 +226,7 @@ function store(request) {
 
 // Run this code when the page has loaded.
 $(document).ready(function() {
+    ace.require("ace/ext/language_tools");
     ace.Range = require('ace/range').Range;
     // Enable the editor with Whiley syntax.
     editor = ace.edit("code");
@@ -237,10 +238,28 @@ $(document).ready(function() {
     editor.setHighlightActiveLine(false);
     editor.setShowFoldWidgets(false);
     editor.setShowPrintMargin(false);
-    editor.setAutoScrollEditorIntoView(true);    
+    editor.setAutoScrollEditorIntoView(true);
     editor.getSession().setUseSoftTabs(true);
     editor.getSession().setTabSize(4);
     editor.markers = [];
+    editor.setOptions({
+        enableBasicAutocompletion: true
+    });
+
+  var staticWordCompleter = {
+    getCompletions: function(editor, session, pos, prefix, callback) {
+      var wordList = require("ace/mode/whiley").keywords;
+      callback(null, wordList.map(function(word) {
+        return {
+          caption: word,
+          value: word,
+          meta: "static"
+        };
+      }));
+
+    }
+  };
+  editor.completers = [staticWordCompleter];
 
     $("#code").resizable({
         resize: function() {
