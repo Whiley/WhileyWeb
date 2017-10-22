@@ -21,10 +21,10 @@
 <img id='spinner' src='images/loading.gif' />
 <div id='egbar'>
   <span>Examples:</span>
-  <select name='eg'>
-    <#--<#list examples as example>-->
-      <#--<option onclick='showExample(${example.index});'>${example.name}</option>-->
-    <#--</#list>-->
+  <select name='eg' onchange="showExample(this.value);">
+      <option value="0">Hello World</option>
+      <option value="1">Absolute</option>
+      <option value="2">IndexOf</option>
   </select>
 </div>
 <div id='messages'></div>
