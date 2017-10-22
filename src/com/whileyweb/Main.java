@@ -1,5 +1,7 @@
 package com.whileyweb;
 
+import com.whileyweb.util.HtmlPage;
+import freemarker.template.TemplateExceptionHandler;
 import java.io.*;
 import java.net.*;
 import java.sql.Connection;
@@ -7,13 +9,12 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
+import freemarker.template.Configuration;
 import org.apache.http.*;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.bootstrap.HttpServer;
 import org.apache.http.impl.bootstrap.ServerBootstrap;
-
-import com.whileyweb.pages.FrontPage;
 
 import jwebkit.http.HttpFileHandler;
 
@@ -62,6 +63,11 @@ public class Main {
 		while (portIndex < HTTP_PORTS.length) {
 			int port = HTTP_PORTS[portIndex++];
 			try {
+				Configuration cfg = new Configuration(Configuration.VERSION_2_3_25);
+				cfg.setDirectoryForTemplateLoading(new File("html"));
+				cfg.setDefaultEncoding("UTF-8");
+				cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+				cfg.setLogTemplateExceptions(false);
 				// Construct HTTP server object, and connect pages to routes
 				HttpServer server = ServerBootstrap.bootstrap().setListenerPort(port).setSocketConfig(socketConfig)
 						.setExceptionLogger(new Logger())
@@ -70,7 +76,7 @@ public class Main {
 						.registerHandler("*.png", new HttpFileHandler(new File("."),IMAGE_PNG))
 						.registerHandler("*.gif", new HttpFileHandler(new File("."),IMAGE_GIF))
 						.registerHandler("/compile", new WhileyWebCompiler())
-						.registerHandler("/", new FrontPage())
+						.registerHandler("/", new HtmlPage(cfg))
 						.create();
 				// Attempt to start server
 				server.start();
