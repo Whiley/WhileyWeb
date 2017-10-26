@@ -243,7 +243,8 @@ $(document).ready(function() {
     editor.getSession().setTabSize(4);
     editor.markers = [];
     editor.setOptions({
-        enableBasicAutocompletion: true
+        enableBasicAutocompletion: true,
+	enableLiveAutocompletion: true,
     });
 
   var staticWordCompleter = {
