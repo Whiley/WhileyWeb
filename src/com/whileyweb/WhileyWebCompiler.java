@@ -49,7 +49,7 @@ import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 
 public class WhileyWebCompiler extends HttpMethodDispatchHandler {
-	private static String WYRT_LIB = "lib/wystd-v0.2.2.jar".replace('/',File.separatorChar);
+	private static String WYRT_LIB = "lib/wystd-v0.2.3.jar".replace('/',File.separatorChar);
 
 	public WhileyWebCompiler() {
 		super(HttpMethodDispatchHandler.ALLOW_POST);
