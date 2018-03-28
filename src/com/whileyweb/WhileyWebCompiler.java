@@ -58,7 +58,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 	@Override
 	public void post(HttpRequest request, HttpResponse response, HttpContext context)
 			throws HttpException, IOException {
-		HttpEntity entity = (HttpEntity) checkHasEntity(request);
+		HttpEntity entity = checkHasEntity(request);
 		List<NameValuePair> params = URLEncodedUtils.parse(entity);
 		String code = null;
 		boolean verification=false;
@@ -244,6 +244,8 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 			}
 		} catch(Interpreter.UndefinedException e) {
 			// do nothing for now
+		} catch (Throwable t) {
+			return "(internal failure)";
 		}
 		return null;
 	}
