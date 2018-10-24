@@ -120,18 +120,24 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 			result.put("result", "success");
 			result.put("js", extractJavaScript(file));
 		} catch (SyntaxError e) {
-			SyntacticItem element = e.getElement();
-			Span span = extractSpan(element);
-			EnclosingLine enclosing = readEnclosingLine(srcFile.inputStream(), span.getStart().get().intValue(),
-					span.getEnd().get().intValue());
-			result.put("result", "errors");
-			// Generate counterexample (if requested)
-			String counterexample = null;
-			if(counterexamples && element instanceof WyalFile.Declaration.Assert) {
-				WyalFile.Declaration.Assert assertion = (WyalFile.Declaration.Assert) element;
-				counterexample = findCounterexample(assertion,project);
+			try {
+				SyntacticItem element = e.getElement();
+				Span span = extractSpan(element);
+				EnclosingLine enclosing = readEnclosingLine(srcFile.inputStream(), span.getStart().get().intValue(),
+						span.getEnd().get().intValue());
+				result.put("result", "errors");
+				// Generate counterexample (if requested)
+				String counterexample = null;
+				if(counterexamples && element instanceof WyalFile.Declaration.Assert) {
+					WyalFile.Declaration.Assert assertion = (WyalFile.Declaration.Assert) element;
+					counterexample = findCounterexample(assertion,project);
+				}
+				result.put("errors", toErrorResponse(enclosing, e.getMessage(), counterexample));
+			} catch (Exception ex) {
+				// now what?
+				result.put("result", "exception");
+				result.put("text", e.getMessage());
 			}
-			result.put("errors", toErrorResponse(enclosing, e.getMessage(), counterexample));
 		} catch (Exception e) {
 			// now what?
 			result.put("result", "exception");
