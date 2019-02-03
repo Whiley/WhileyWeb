@@ -244,7 +244,7 @@ $(document).ready(function() {
     editor.markers = [];
     editor.setOptions({
         enableBasicAutocompletion: true,
-	enableLiveAutocompletion: true,
+    	enableLiveAutocompletion: true
     });
 
   var staticWordCompleter = {
