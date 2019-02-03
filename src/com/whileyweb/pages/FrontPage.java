@@ -53,9 +53,9 @@ public class FrontPage extends HtmlPage {
 	public void writeExampleSelector(PrintStream writer) {
 		writer.println("\t\t\t<div id='egbar'>");
 		writer.println("Examples:");
-		writer.println("<select name='eg'>");
+		writer.println("<select onChange='showExample(this.selectedIndex);' name='eg'>");
 		for(int i=0;i!=examples.length;++i) {
-			writer.println("<option onclick='showExample(" + i + ");'>" + examples[i] + "</option>");
+			writer.println("<option>" + examples[i] + "</option>");
 		}
 		writer.println("</select>");
 		writer.println("</div>");
