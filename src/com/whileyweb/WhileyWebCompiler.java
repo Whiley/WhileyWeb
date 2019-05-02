@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ForkJoinPool;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.http.*;
@@ -21,38 +22,39 @@ import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.protocol.HttpContext;
 
 import jwebkit.http.HttpMethodDispatchHandler;
-import wybs.lang.SyntaxError;
-import wybs.util.StdBuildRule;
-import wybs.util.StdProject;
+import wybs.util.SequentialBuildProject;
 import wybs.util.AbstractCompilationUnit.Attribute.Span;
 import wyc.Activator;
 import wyc.task.CompileTask;
+import wyc.util.TestUtils;
+import wycc.WyMain;
+import wycc.WyProject;
 import wyc.lang.WhileyFile;
-import wybs.lang.NameResolver;
 import wyal.lang.WyalFile;
 import wyal.util.Interpreter;
 import wyal.util.SmallWorldDomain;
 import wyal.util.WyalFileResolver;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.util.JarFileRoot;
+import wyfs.util.ZipFileRoot;
+import wyil.lang.WyilFile.SyntaxError;
 import wyfs.util.Trie;
 import wyfs.util.VirtualRoot;
-import wyc.task.Wyil2WyalBuilder;
 import wyjs.core.JavaScriptFile;
 import wyjs.tasks.JavaScriptCompileTask;
 import wytp.provers.AutomatedTheoremProver;
 import wytp.types.extractors.TypeInvariantExtractor;
-import wybs.lang.Attribute;
-import wybs.lang.SyntacticElement;
+import wybs.lang.Build;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 
 public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 	private static String WYRT_LIB = "lib/wystd-v0.2.3.jar".replace('/',File.separatorChar);
+	private final Build.Project project;
 
-	public WhileyWebCompiler() {
+	public WhileyWebCompiler(Build.Project project) {
 		super(HttpMethodDispatchHandler.ALLOW_POST);
+		this.project = project;
 	}
 
 	@Override
@@ -91,52 +93,43 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 	}
 
 	private String compile(String code, boolean verification, boolean counterexamples) throws IOException, HttpException {
-		Path.ID mainID = Trie.ROOT.append("main");
-		Content.Registry registry = new Activator.Registry();
-		VirtualRoot root = new VirtualRoot(registry);
-		// Configure root for standard library
-		JarFileRoot stdlib = new JarFileRoot(WYRT_LIB,registry);
-		Path.Entry<WhileyFile> srcFile = root.create(mainID, WhileyFile.ContentType);
+		Path.Root root = project.getRoot();
+		Path.ID srcID = Trie.ROOT.append("src").append("main");
+		Path.ID binID = Trie.ROOT.append("bin").append("main");
+		//
+		Path.Entry<WhileyFile> srcFile = root.get(srcID,WhileyFile.ContentType);
+		if(srcFile == null) {
+			srcFile = root.create(srcID, WhileyFile.ContentType);
+		}
 		// Write contents into source file
 		srcFile.outputStream().write(code.getBytes());
-		// Create registry and initialise root with the source file
-		ArrayList<Path.Root> roots = new ArrayList<>();
-		roots.add(root);
-		roots.add(stdlib);
-		StdProject project = new StdProject(roots);
-		addWhiley2WyilBuildRule(root,project);
-		addWyil2JavaScriptBuildRule(root,project);
-		if(verification) {
-			addVerificationBuildRules(root,project);
-		}
 		// Create project
 		HashMap<String, Object> result = new HashMap<>();
-		List<Path.Entry<WhileyFile>> entries = new ArrayList<>();
-		entries.add(srcFile);
 		try {
-			project.build(entries);
-			Path.Entry<JavaScriptFile> file = project.get(mainID,JavaScriptFile.ContentType);
+			boolean b = project.build(ForkJoinPool.commonPool()).get();
+			Path.Entry<JavaScriptFile> file = root.get(binID,JavaScriptFile.ContentType);
+			System.out.println("SUCCESS: " + b);
 			result.put("result", "success");
 			result.put("js", extractJavaScript(file));
-		} catch (SyntaxError e) {
-			try {
-				SyntacticItem element = e.getElement();
-				Span span = extractSpan(element);
-				EnclosingLine enclosing = readEnclosingLine(srcFile.inputStream(), span.getStart().get().intValue(),
-						span.getEnd().get().intValue());
-				result.put("result", "errors");
-				// Generate counterexample (if requested)
-				String counterexample = null;
-				if(counterexamples && element instanceof WyalFile.Declaration.Assert) {
-					WyalFile.Declaration.Assert assertion = (WyalFile.Declaration.Assert) element;
-					counterexample = findCounterexample(assertion,project);
-				}
-				result.put("errors", toErrorResponse(enclosing, e.getMessage(), counterexample));
-			} catch (Exception ex) {
-				// now what?
-				result.put("result", "exception");
-				result.put("text", e.getMessage());
-			}
+//		} catch (Exception e) {
+//			try {
+//				SyntacticItem element = e.getElement();
+//				Span span = extractSpan(element);
+//				EnclosingLine enclosing = readEnclosingLine(srcFile.inputStream(), span.getStart().get().intValue(),
+//						span.getEnd().get().intValue());
+//				result.put("result", "errors");
+//				// Generate counterexample (if requested)
+//				String counterexample = null;
+//				if(counterexamples && element instanceof WyalFile.Declaration.Assert) {
+//					WyalFile.Declaration.Assert assertion = (WyalFile.Declaration.Assert) element;
+//					counterexample = findCounterexample(assertion,project);
+//				}
+//				result.put("errors", toErrorResponse(enclosing, e.getMessage(), counterexample));
+//			} catch (Exception ex) {
+//				// now what?
+//				result.put("result", "exception");
+//				result.put("text", e.getMessage());
+//			}
 		} catch (Exception e) {
 			// now what?
 			result.put("result", "exception");
@@ -144,80 +137,6 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		}
 
 		return toJsonString(result);
-	}
-
-	/**
-	 * This method attempts to extract a span from a given syntactic item. Firstly,
-	 * the item might itself be a span (generated in the lexer); Secondly, it might
-	 * be an item which is tagged with a span (generated in e.g. FlowTypeCheck);
-	 * finally, it might be an item generated by the verifier (in which case it uses
-	 * old-style attributes).
-	 *
-	 * @param element
-	 * @return
-	 */
-	private Span extractSpan(SyntacticItem element) {
-		if(element instanceof Span) {
-			return (Span) element;
-		} else  {
-			SyntacticHeap parent = element.getHeap();
-			Span span = parent.getParent(element,Span.class);
-			if(span == null) {
-				// FIXME: This is a terrible hack. Basically, we attempt to convert from the
-				// old-style attributes to the new style spans.
-				wybs.lang.Attribute.Source src = element.attribute(wybs.lang.Attribute.Source.class);
-				if(src != null) {
-					span = new Span(null, src.start, src.end);
-				}
-			}
-			return span;
-		}
-	}
-	/**
-	 * Add the rule for compiling Whiley source files into WyIL files.
-	 *
-	 * @param project
-	 */
-	protected void addWhiley2WyilBuildRule(Path.Root root, StdProject project) {
-		// Configure build rules for normal compilation
-		Content.Filter<WhileyFile> whileyIncludes = Content.filter("**", WhileyFile.ContentType);
-		Content.Filter<WhileyFile> whileyExcludes = null;
-		// Rule for compiling Whiley to WyIL
-		CompileTask wyilBuilder = new CompileTask(project);
-		//wyilBuilder.setLogger(logger);
-		project.add(new StdBuildRule(wyilBuilder, root, whileyIncludes, whileyExcludes, root));
-	}
-
-	protected void addWyil2JavaScriptBuildRule(Path.Root root, StdProject project) {
-		// Configure build rules for normal compilation
-		Content.Filter<WhileyFile> wyilIncludes = Content.filter("**", WhileyFile.BinaryContentType);
-		Content.Filter<WhileyFile> wyilExcludes = null;
-		// Rule for compiling Whiley to WyIL
-		JavaScriptCompileTask jsBuilder = new JavaScriptCompileTask(project);
-		project.add(new StdBuildRule(jsBuilder, root, wyilIncludes, wyilExcludes, root));
-	}
-
-	/**
-	 * Add build rules necessary for compiling wyil binary files into wyal files
-	 * for verification.
-	 *
-	 * @param project
-	 */
-	protected void addVerificationBuildRules(Path.Root root, StdProject project) {
-		// Configure build rules for verification (if applicable)
-		Content.Filter<WhileyFile> wyilIncludes = Content.filter("**", WhileyFile.BinaryContentType);
-		Content.Filter<WhileyFile> wyilExcludes = null;
-		Content.Filter<WyalFile> wyalIncludes = Content.filter("**", WyalFile.ContentType);
-		Content.Filter<WyalFile> wyalExcludes = null;
-		// Rule for compiling WyIL to WyAL
-		Wyil2WyalBuilder wyalBuilder = new Wyil2WyalBuilder(project);
-		project.add(new StdBuildRule(wyalBuilder, root, wyilIncludes, wyilExcludes, root));
-		//
-		wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem(project);
-		AutomatedTheoremProver prover = new AutomatedTheoremProver(typeSystem);
-		wyal.tasks.CompileTask wyalBuildTask = new wyal.tasks.CompileTask(project,typeSystem,prover);
-		wyalBuildTask.setVerify(true);
-		project.add(new StdBuildRule(wyalBuildTask, root, wyalIncludes, wyalExcludes, root));
 	}
 
 	private static ArrayList toErrorResponse(EnclosingLine enclosing, String message, String counterexample) {
@@ -234,25 +153,6 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		}
 		l.add(args);
 		return l;
-	}
-
-	public String findCounterexample(WyalFile.Declaration.Assert assertion, StdProject project) {
-		// FIXME: it doesn't feel right creating new instances here.
-		NameResolver resolver = new WyalFileResolver(project);
-		TypeInvariantExtractor extractor = new TypeInvariantExtractor(resolver);
-		Interpreter interpreter = new Interpreter(new SmallWorldDomain(resolver), resolver, extractor);
-		try {
-			Interpreter.Result result = interpreter.evaluate(assertion);
-			if(!result.holds()) {
-				// FIKXME: could tidy this up!!
-				return result.getEnvironment().toString();
-			}
-		} catch(Interpreter.UndefinedException e) {
-			// do nothing for now
-		} catch (Throwable t) {
-			return "(internal failure)";
-		}
-		return null;
 	}
 
 	private static String extractJavaScript(Path.Entry<JavaScriptFile> file) throws IOException {

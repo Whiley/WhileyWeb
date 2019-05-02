@@ -16,6 +16,21 @@ import org.apache.http.impl.bootstrap.HttpServer;
 import org.apache.http.impl.bootstrap.ServerBootstrap;
 
 import jwebkit.http.HttpFileHandler;
+import wyal.lang.WyalFile;
+import wybs.lang.Build;
+import wybs.lang.SyntacticException;
+import wybs.util.SequentialBuildProject;
+import wyc.lang.WhileyFile;
+import wyc.util.TestUtils;
+import static wyc.Activator.WHILEY_PLATFORM;
+import wycc.WyMain;
+import wycc.cfg.ConfigFile;
+import wycc.cfg.Configuration;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.DirectoryRoot;
+import wyfs.util.Trie;
+import wyil.lang.WyilFile;
 
 /**
  * Responsible for initialising and starting the HTTP server which manages the
@@ -32,16 +47,49 @@ public class Main {
 	public static final ContentType TEXT_CSS = ContentType.create("text/css");
 	public static final ContentType IMAGE_PNG = ContentType.create("image/png");
 	public static final ContentType IMAGE_GIF = ContentType.create("image/gif");
+
+	/**
+	 * Default implementation of a content registry. This associates whiley and
+	 * wyil files with their respective content types.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Registry implements Content.Registry {
+		@Override
+		public void associate(Path.Entry e) {
+			String suffix = e.suffix();
+
+			if (suffix.equals("whiley")) {
+				e.associate(WhileyFile.ContentType, null);
+			} else if (suffix.equals("wyil")) {
+				e.associate(WyilFile.ContentType, null);
+			} else if (suffix.equals("toml")) {
+				e.associate(ConfigFile.ContentType, null);
+			}
+		}
+
+		@Override
+		public String suffix(Content.Type<?> t) {
+			return t.getSuffix();
+		}
+	}
 	// =======================================================================
 	// Main Entry Point
 	// =======================================================================
-	public static void main(String[] argc) {
-//		Connection connection = getDatabaseConnection();
-//		SqlDatabase db = new SqlDatabase(connection);
-//		db.bindTable("users", new SqlTable.Column("name", SqlType.VARCHAR(10)));
-
+	public static void main(String[] argc) throws IOException {
+		Content.Registry registry = new Registry();
+		// Determine project directory
+		Path.Root localRoot = determineLocalRoot(registry);
+		// Read the configuration schema
+		Configuration configuration = readConfigFile("wy", localRoot, WHILEY_PLATFORM.getConfigurationSchema());
+		// Construct environment and execute arguments
+		Build.Project project = new SequentialBuildProject(localRoot);
+		// Initialise the whiley platform
+		wyc.Activator.WHILEY_PLATFORM.initialise(configuration, project);
+		// Attempt to start the web server
 		try {
-			HttpServer server = startWebServer();
+			HttpServer server = startWebServer(project);
 			server.start();
 			server.awaitTermination(-1, TimeUnit.MILLISECONDS);
 		} catch(Exception e) {
@@ -50,7 +98,7 @@ public class Main {
 	}
 
 
-	public static HttpServer startWebServer() throws IOException {
+	public static HttpServer startWebServer(Build.Project project) throws IOException {
 		// Construct appropriate configuration for socket over which HTTP
 		// server will run.
 		SocketConfig socketConfig = SocketConfig.custom().setSoTimeout(1500).build();
@@ -69,7 +117,7 @@ public class Main {
 						.registerHandler("/js/*", new HttpFileHandler(new File("."),TEXT_JAVASCRIPT))
 						.registerHandler("*.png", new HttpFileHandler(new File("."),IMAGE_PNG))
 						.registerHandler("*.gif", new HttpFileHandler(new File("."),IMAGE_GIF))
-						.registerHandler("/compile", new WhileyWebCompiler())
+						.registerHandler("/compile", new WhileyWebCompiler(project))
 						.registerHandler("/", new FrontPage())
 						.registerHandler("*", new HtmlPage())
 						.create();
@@ -100,13 +148,40 @@ public class Main {
 		}
     }
 
-    private static Connection getDatabaseConnection() throws SQLException {
-		try {
-			Class.forName("org.sqlite.JDBC");
-		} catch (Exception e) {
-			e.printStackTrace();
+	private static Configuration readConfigFile(String name, Path.Root root, Configuration.Schema... schemas)
+			throws IOException {
+		Path.Entry<ConfigFile> config = root.get(Trie.fromString(name), ConfigFile.ContentType);
+		if (config == null) {
+			return Configuration.EMPTY;
 		}
-		Connection conn = DriverManager.getConnection("jdbc:sqlite:test.db");
-		return conn;
+		try {
+			// Read the configuration file
+			ConfigFile cf = config.read();
+			// Construct configuration according to given schema
+			return cf.toConfiguration(Configuration.toCombinedSchema(schemas));
+		} catch (SyntacticException e) {
+			e.outputSourceError(System.out, false);
+			System.exit(-1);
+			return null;
+		}
+	}
+
+	/**
+	 * Determine the local root. This is within the hidden whiley directory in the
+	 * user's home directory (e.g. ~/.whiley).
+	 *
+	 * @param tool
+	 * @return
+	 * @throws IOException
+	 */
+	private static Path.Root determineLocalRoot(Content.Registry registry) throws IOException {
+		String userhome = System.getProperty("user.home");
+		String whileydir = userhome + File.separator + ".whiley" + File.separator + "whileyweb";
+		File f = new File(whileydir);
+		// Construct the directory if it doesn't already exist.
+		if(!f.exists()) {
+			f.mkdirs();
+		}
+		return new DirectoryRoot(whileydir, registry);
 	}
 }
