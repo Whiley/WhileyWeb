@@ -116,11 +116,11 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 				// result.put("js", extractJavaScript(file));
 			}
 		} catch (Exception e) {
+			e.printStackTrace();
 			// Some kind of internal failure has occurred, so simply report this.
 			result.put("result", "exception");
 			result.put("text", e.getMessage());
 		}
-
 		return toJsonString(result);
 	}
 
@@ -173,7 +173,6 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 //				error.put("counterexample",counterexample);
 //			}
 		}
-		System.out.println("MESSAGE: " + marker.getMessage());
 		error.put("text", marker.getMessage());
 		//
 		return error;
@@ -224,8 +223,10 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 				r += toJsonString(e.getValue());
 			}
 			return r + "}";
+		} else if (o == null) {
+			return "null";
 		} else {
-			throw new IllegalArgumentException("GOT: " + o);
+			throw new IllegalArgumentException();
 		}
 	}
 
