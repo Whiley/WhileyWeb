@@ -31,6 +31,7 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
+import wyfs.util.VirtualRoot;
 import wyil.lang.WyilFile;
 
 /**
@@ -81,10 +82,11 @@ public class Main {
 	public static void main(String[] argc) throws IOException {
 		Content.Registry registry = new Registry();
 		// Determine project directory
-		Path.Root localRoot = determineLocalRoot(registry);
+		Path.Root localRoot = new VirtualRoot(registry);
 		// Read the configuration schema
-		Configuration configuration = readConfigFile("wy", localRoot, WyMain.LOCAL_CONFIG_SCHEMA,
+		Configuration.Schema schema = Configuration.toCombinedSchema(WyMain.LOCAL_CONFIG_SCHEMA,
 				WHILEY_PLATFORM.getConfigurationSchema());
+		Configuration configuration = Configuration.EMPTY(schema);
 		// Construct environment and execute arguments
 		Build.Project project = new SequentialBuildProject(localRoot);
 		// Initialise the whiley platform
@@ -92,7 +94,6 @@ public class Main {
 		// Refresh system state
 		project.refresh();
 		// Attempt to start the web server
-
 		try {
 			HttpServer server = startWebServer(project);
 			server.start();
@@ -140,7 +141,6 @@ public class Main {
 	}
 
     private static class Logger implements ExceptionLogger {
-
 		@Override
 		public void log(Exception ex) {
             if (ex instanceof SocketTimeoutException) {
@@ -152,42 +152,4 @@ public class Main {
             }
 		}
     }
-
-	private static Configuration readConfigFile(String name, Path.Root root, Configuration.Schema... schemas)
-			throws IOException {
-		Configuration.Schema schema = Configuration.toCombinedSchema(schemas);
-		Path.Entry<ConfigFile> config = root.get(Trie.fromString(name), ConfigFile.ContentType);
-		if (config == null) {
-			return Configuration.EMPTY(schema);
-		}
-		try {
-			// Read the configuration file
-			ConfigFile cf = config.read();
-			// Construct configuration according to given schema
-			return cf.toConfiguration(schema);
-		} catch (SyntacticException e) {
-			e.outputSourceError(System.out, false);
-			System.exit(-1);
-			return null;
-		}
-	}
-
-	/**
-	 * Determine the local root. This is within the hidden whiley directory in the
-	 * user's home directory (e.g. ~/.whiley).
-	 *
-	 * @param tool
-	 * @return
-	 * @throws IOException
-	 */
-	private static Path.Root determineLocalRoot(Content.Registry registry) throws IOException {
-		String userhome = System.getProperty("user.home");
-		String whileydir = userhome + File.separator + ".whiley" + File.separator + "whileyweb";
-		File f = new File(whileydir);
-		// Construct the directory if it doesn't already exist.
-		if(!f.exists()) {
-			f.mkdirs();
-		}
-		return new DirectoryRoot(whileydir, registry);
-	}
 }
