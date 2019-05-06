@@ -24,6 +24,7 @@ import wyc.lang.WhileyFile;
 import wyc.util.TestUtils;
 import static wyc.Activator.WHILEY_PLATFORM;
 import wycc.WyMain;
+import wycc.WyProject;
 import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
 import wyfs.lang.Content;
@@ -82,12 +83,16 @@ public class Main {
 		// Determine project directory
 		Path.Root localRoot = determineLocalRoot(registry);
 		// Read the configuration schema
-		Configuration configuration = readConfigFile("wy", localRoot, WHILEY_PLATFORM.getConfigurationSchema());
+		Configuration configuration = readConfigFile("wy", localRoot, WyMain.LOCAL_CONFIG_SCHEMA,
+				WHILEY_PLATFORM.getConfigurationSchema());
 		// Construct environment and execute arguments
 		Build.Project project = new SequentialBuildProject(localRoot);
 		// Initialise the whiley platform
 		wyc.Activator.WHILEY_PLATFORM.initialise(configuration, project);
+		// Refresh system state
+		project.refresh();
 		// Attempt to start the web server
+
 		try {
 			HttpServer server = startWebServer(project);
 			server.start();
@@ -150,15 +155,16 @@ public class Main {
 
 	private static Configuration readConfigFile(String name, Path.Root root, Configuration.Schema... schemas)
 			throws IOException {
+		Configuration.Schema schema = Configuration.toCombinedSchema(schemas);
 		Path.Entry<ConfigFile> config = root.get(Trie.fromString(name), ConfigFile.ContentType);
 		if (config == null) {
-			return Configuration.EMPTY;
+			return Configuration.EMPTY(schema);
 		}
 		try {
 			// Read the configuration file
 			ConfigFile cf = config.read();
 			// Construct configuration according to given schema
-			return cf.toConfiguration(Configuration.toCombinedSchema(schemas));
+			return cf.toConfiguration(schema);
 		} catch (SyntacticException e) {
 			e.outputSourceError(System.out, false);
 			System.exit(-1);

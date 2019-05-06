@@ -3,11 +3,8 @@ package com.whileyweb;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -15,41 +12,32 @@ import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.http.*;
-import org.apache.http.client.utils.*;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpException;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.protocol.HttpContext;
 
 import jwebkit.http.HttpMethodDispatchHandler;
-import wybs.util.SequentialBuildProject;
-import wybs.util.AbstractCompilationUnit.Attribute.Span;
-import wyc.Activator;
-import wyc.task.CompileTask;
-import wyc.util.TestUtils;
-import wycc.WyMain;
-import wycc.WyProject;
-import wyc.lang.WhileyFile;
-import wyal.lang.WyalFile;
-import wyal.util.Interpreter;
-import wyal.util.SmallWorldDomain;
-import wyal.util.WyalFileResolver;
-import wyfs.lang.Content;
-import wyfs.lang.Path;
-import wyfs.util.ZipFileRoot;
-import wyil.lang.WyilFile.SyntaxError;
-import wyfs.util.Trie;
-import wyfs.util.VirtualRoot;
-import wyjs.core.JavaScriptFile;
-import wyjs.tasks.JavaScriptCompileTask;
-import wytp.provers.AutomatedTheoremProver;
-import wytp.types.extractors.TypeInvariantExtractor;
 import wybs.lang.Build;
-import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
+import wybs.util.AbstractCompilationUnit;
+import wybs.util.AbstractCompilationUnit.Attribute;
+import wybs.util.AbstractCompilationUnit.Attribute.Span;
+import wyc.lang.WhileyFile;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.SyntaxError;
+import wyjs.core.JavaScriptFile;
 
 public class WhileyWebCompiler extends HttpMethodDispatchHandler {
-	private static String WYRT_LIB = "lib/wystd-v0.2.3.jar".replace('/',File.separatorChar);
+	private static String WYRT_LIB = "lib/wystd-v0.2.3.jar".replace('/', File.separatorChar);
 	private final Build.Project project;
 
 	public WhileyWebCompiler(Build.Project project) {
@@ -63,14 +51,14 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		HttpEntity entity = checkHasEntity(request);
 		List<NameValuePair> params = URLEncodedUtils.parse(entity);
 		String code = null;
-		boolean verification=false;
-		boolean counterexamples=false;
+		boolean verification = false;
+		boolean counterexamples = false;
 		for (NameValuePair p : params) {
 			if (p.getName().equals("code")) {
 				code = p.getValue();
-			} else if(p.getName().equals("verify")) {
+			} else if (p.getName().equals("verify")) {
 				verification = Boolean.parseBoolean(p.getValue());
-			} else if(p.getName().equals("counterexamples")) {
+			} else if (p.getName().equals("counterexamples")) {
 				counterexamples = Boolean.parseBoolean(p.getValue());
 			}
 		}
@@ -92,46 +80,43 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		}
 	}
 
-	private String compile(String code, boolean verification, boolean counterexamples) throws IOException, HttpException {
+	private String compile(String code, boolean verification, boolean counterexamples)
+			throws IOException, HttpException {
 		Path.Root root = project.getRoot();
 		Path.ID srcID = Trie.ROOT.append("src").append("main");
 		Path.ID binID = Trie.ROOT.append("bin").append("main");
 		//
-		Path.Entry<WhileyFile> srcFile = root.get(srcID,WhileyFile.ContentType);
-		if(srcFile == null) {
+		Path.Entry<WhileyFile> srcFile = root.get(srcID, WhileyFile.ContentType);
+		if (srcFile == null) {
 			srcFile = root.create(srcID, WhileyFile.ContentType);
 		}
 		// Write contents into source file
 		srcFile.outputStream().write(code.getBytes());
+		// Refresh project to ensure changes to binary file visible
+		project.refresh();
 		// Create project
 		HashMap<String, Object> result = new HashMap<>();
 		try {
-			boolean b = project.build(ForkJoinPool.commonPool()).get();
-			Path.Entry<JavaScriptFile> file = root.get(binID,JavaScriptFile.ContentType);
-			System.out.println("SUCCESS: " + b);
-			result.put("result", "success");
-			result.put("js", extractJavaScript(file));
-//		} catch (Exception e) {
-//			try {
-//				SyntacticItem element = e.getElement();
-//				Span span = extractSpan(element);
-//				EnclosingLine enclosing = readEnclosingLine(srcFile.inputStream(), span.getStart().get().intValue(),
-//						span.getEnd().get().intValue());
-//				result.put("result", "errors");
-//				// Generate counterexample (if requested)
-//				String counterexample = null;
-//				if(counterexamples && element instanceof WyalFile.Declaration.Assert) {
-//					WyalFile.Declaration.Assert assertion = (WyalFile.Declaration.Assert) element;
-//					counterexample = findCounterexample(assertion,project);
-//				}
-//				result.put("errors", toErrorResponse(enclosing, e.getMessage(), counterexample));
-//			} catch (Exception ex) {
-//				// now what?
-//				result.put("result", "exception");
-//				result.put("text", e.getMessage());
-//			}
+			boolean ok = project.build(ForkJoinPool.commonPool()).get();
+			// Flush everything to disk
+			root.flush();
+			//
+			if (!ok) {
+				// Extract the binary file
+				Path.Entry<WyilFile> binFile = root.get(binID, WyilFile.ContentType);
+				WyilFile binary = binFile.read();
+				// Build failed for some reason. Need to extract the error messages.
+				List<SyntaxError> errors = binary.findAll(SyntaxError.class);
+				result.put("result", "errors");
+				result.put("errors", toErrorMessages(srcFile, errors));
+			} else {
+				// All is well
+				// result.put("js", extractJavaScript(file));
+				result.put("result", "success");
+				// result.put("js", extractJavaScript(file));
+			}
 		} catch (Exception e) {
-			// now what?
+			// Some kind of internal failure has occurred, so simply report this.
 			result.put("result", "exception");
 			result.put("text", e.getMessage());
 		}
@@ -139,20 +124,59 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		return toJsonString(result);
 	}
 
-	private static ArrayList toErrorResponse(EnclosingLine enclosing, String message, String counterexample) {
-		ArrayList l = new ArrayList();
-		HashMap<String, Object> args = new HashMap<>();
-		args.put("filename", "main.whiley");
-		args.put("line", enclosing.lineNumber);
-		args.put("start", enclosing.columnStart());
-		args.put("end", enclosing.columnEnd());
-		args.put("text", message);
-		args.put("context", Collections.EMPTY_LIST);
-		if(counterexample != null) {
-			args.put("counterexample",counterexample);
+	/**
+	 * Convert a list of syntactic markers into a key-value form which can be easily
+	 * converted into JSON.
+	 *
+	 * @param source
+	 * @param markers
+	 * @return
+	 */
+	private static ArrayList<Object> toErrorMessages(Path.Entry<?> source,
+			List<? extends SyntacticItem.Marker> markers) {
+		ArrayList<Object> errors = new ArrayList<>();
+		//
+		for (SyntacticItem.Marker marker : markers) {
+			errors.add(toErrorMessage(source, marker));
 		}
-		l.add(args);
-		return l;
+		//
+		return errors;
+	}
+
+	/**
+	 * Convert a syntactic marker on a given source file to a key-value
+	 * representation which can easily be converted into JSON.
+	 *
+	 * @param source
+	 *            The source file containing the syntactic error
+	 * @param marker
+	 *            The syntactic marker identifying the error.
+	 *
+	 * @return
+	 */
+	private static Map<String, Object> toErrorMessage(Path.Entry<?> source, SyntacticItem.Marker marker) {
+		HashMap<String, Object> error = new HashMap<>();
+		//
+		Span span = marker.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
+		// Read the enclosing line so we can print it
+		EnclosingLine enclosing = readEnclosingLine(source, span);
+		// Sanity check we found it
+		if (enclosing != null) {
+			// construct the error message
+			error.put("filename", "main.whiley");
+			error.put("line", enclosing.lineNumber);
+			error.put("start", enclosing.columnStart());
+			error.put("end", enclosing.columnEnd());
+			error.put("context", Collections.EMPTY_LIST);
+			// FIXME: put back counterexamples!
+//			if(counterexample) {
+//				error.put("counterexample",counterexample);
+//			}
+		}
+		System.out.println("MESSAGE: " + marker.getMessage());
+		error.put("text", marker.getMessage());
+		//
+		return error;
 	}
 
 	private static String extractJavaScript(Path.Entry<JavaScriptFile> file) throws IOException {
@@ -201,17 +225,20 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 			}
 			return r + "}";
 		} else {
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("GOT: " + o);
 		}
 	}
 
-	private static EnclosingLine readEnclosingLine(InputStream input, int start, int end) {
+
+	private static EnclosingLine readEnclosingLine(Path.Entry<?> entry, Attribute.Span location) {
+		int spanStart = location.getStart().get().intValue();
+		int spanEnd = location.getEnd().get().intValue();
 		int line = 0;
 		int lineStart = 0;
 		int lineEnd = 0;
 		StringBuilder text = new StringBuilder();
 		try {
-			BufferedReader in = new BufferedReader(new InputStreamReader(input));
+			BufferedReader in = new BufferedReader(new InputStreamReader(entry.inputStream(), "UTF-8"));
 
 			// first, read whole file
 			int len = 0;
@@ -220,7 +247,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 				text.append(buf, 0, len);
 			}
 
-			while (lineEnd < text.length() && lineEnd <= start) {
+			while (lineEnd < text.length() && lineEnd <= spanStart) {
 				lineStart = lineEnd;
 				lineEnd = parseLine(text, lineEnd);
 				line = line + 1;
@@ -230,7 +257,8 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		}
 		lineEnd = Math.min(lineEnd, text.length());
 
-		return new EnclosingLine(start, end, line, lineStart, lineEnd, text.substring(lineStart, lineEnd));
+		return new EnclosingLine(spanStart, spanEnd, line, lineStart, lineEnd,
+				text.substring(lineStart, lineEnd));
 	}
 
 	private static int parseLine(StringBuilder buf, int index) {
