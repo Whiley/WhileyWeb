@@ -105,11 +105,13 @@ function compile() {
     // Get configuration flags
     var verify = document.getElementById("verification");
     var counterexamples = document.getElementById("counterexamples");
+    var quickcheck = document.getElementById("quickcheck");    
     // Construct request
     var request = {
 	code: editor.getValue(),
 	verify: verify.checked,
-	counterexamples: counterexamples.checked
+	counterexamples: counterexamples.checked,
+	quickcheck: quickcheck.checked
     };
     // Attempt to stash the current state
     store(request);

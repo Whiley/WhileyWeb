@@ -39,7 +39,9 @@ public class FrontPage extends HtmlPage {
 	public void writeConfigOptions(PrintStream writer) {
 		writer.println("<div id='configbar'>");
 		writer.println(
-				"<input id='verification' type='checkBox' checked='checked' title='Enable or disable compile-time verification'>Verification</input>");
+				"<input id='quickcheck' type='checkBox' checked='checked' title='Enable or disable automated specification-based testing'>QuickCheck</input>");
+		writer.println(
+				"<input id='verification' type='checkBox' title='Enable or disable compile-time verification'>Verification</input>");
 		writer.println(
 				"<input id='showConsole' type='checkBox' onclick='showConsole(this.checked);' title='Show Console'>Console</input>");
 		writer.print("<br/>");

@@ -29,6 +29,7 @@ import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractCompilationUnit.Attribute;
 import wybs.util.AbstractCompilationUnit.Attribute.Span;
+import wyc.cmd.QuickCheck;
 import wyc.lang.WhileyFile;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -53,6 +54,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		String code = null;
 		boolean verification = false;
 		boolean counterexamples = false;
+		boolean quickcheck = false;
 		for (NameValuePair p : params) {
 			if (p.getName().equals("code")) {
 				code = p.getValue();
@@ -60,12 +62,14 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 				verification = Boolean.parseBoolean(p.getValue());
 			} else if (p.getName().equals("counterexamples")) {
 				counterexamples = Boolean.parseBoolean(p.getValue());
+			} else if (p.getName().equals("quickcheck")) {
+				quickcheck = Boolean.parseBoolean(p.getValue());
 			}
 		}
 		if (code == null) {
 			response.setStatusCode(HttpStatus.SC_BAD_REQUEST);
 		} else {
-			String r = compile(code,verification,counterexamples);
+			String r = compile(code, verification, counterexamples, quickcheck);
 			response.setEntity(new StringEntity(r)); // ContentType.APPLICATION_JSON fails?
 			response.setStatusCode(HttpStatus.SC_OK);
 		}
@@ -80,7 +84,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		}
 	}
 
-	private String compile(String code, boolean verification, boolean counterexamples)
+	private String compile(String code, boolean verification, boolean counterexamples, boolean quickcheck)
 			throws IOException, HttpException {
 		Path.Root root = project.getRoot();
 		Path.ID srcID = Trie.ROOT.append("src").append("main");
@@ -98,13 +102,18 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		HashMap<String, Object> result = new HashMap<>();
 		try {
 			boolean ok = project.build(ForkJoinPool.commonPool()).get();
+			// Extract the binary file
+			Path.Entry<WyilFile> binFile = root.get(binID, WyilFile.ContentType);
+			WyilFile binary = binFile.read();
+			// Perform quickcheck testing!
+			if(ok && quickcheck) {
+				QuickCheck.Context context = QuickCheck.DEFAULT_CONTEXT;
+				ok = new QuickCheck(project, null, System.out, System.err).check(binary, context);
+			}
 			// Flush everything to disk
 			root.flush();
 			//
 			if (!ok) {
-				// Extract the binary file
-				Path.Entry<WyilFile> binFile = root.get(binID, WyilFile.ContentType);
-				WyilFile binary = binFile.read();
 				// Build failed for some reason. Need to extract the error messages.
 				List<SyntaxError> errors = binary.findAll(SyntaxError.class);
 				result.put("result", "errors");
