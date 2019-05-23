@@ -6,7 +6,7 @@ A simple web IDE is available which allows you to run Whiley on your computer us
 
 To setup the Web IDE, simple clone the WhileyWeb repository from github:
 ```
-% git clone git@github.com:Whiley/WhileyWeb.git
+% git clone https://github.com/Whiley/WhileyWeb.git
 Cloning into 'WhileyWeb'...
 remote: Counting objects: 220, done.
 remote: Compressing objects: 100% (5/5), done.

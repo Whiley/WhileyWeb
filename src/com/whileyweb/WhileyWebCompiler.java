@@ -75,7 +75,6 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		if (code == null) {
 			response.setStatusCode(HttpStatus.SC_BAD_REQUEST);
 		} else {
-			System.out.println("GOT: " + code);
 			String r = compile(code,verification,counterexamples);
 			response.setEntity(new StringEntity(r)); // ContentType.APPLICATION_JSON fails?
 			response.setStatusCode(HttpStatus.SC_OK);

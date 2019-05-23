@@ -22,7 +22,7 @@
   <!-- ============================================== -->
 
   <target name="run" depends="compile">
-    <java classname="com.whileyweb.Main" error="run.err" fork="true">
+    <java classname="com.whileyweb.Main" fork="true">
       <classpath>
 	<pathelement location="src"/>
         <pathelement path="${JWEBKIT}"/>
