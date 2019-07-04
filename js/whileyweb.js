@@ -37,18 +37,21 @@ function clearMessages() {
  * Display all the compilation errors.
  */
 function showErrors(errors) {
+    var annotations = [];
     clearErrors();
     for(var i=0;i!=errors.length;++i) {
 		var error = errors[i];
-        markError(error);
+	markError(error,annotations);
     }
+    //
+    editor.getSession().setAnnotations(annotations);    
 }
 
 /**
  * Add an appropriate marker for a given JSON error object, as
  * returned from the server.
  */
-function markError(error) {
+function markError(error,annotations) {
     var errorText = error.text.replace("\\n","\n");
     if(error.counterexample) {
 	errorText = errorText + "\n\ncounterexample: " + error.counterexample;
@@ -56,12 +59,12 @@ function markError(error) {
     //
     if(error.start !== "" && error.end !== "" && error.line !== "") {
 	// First, add error markers
-        editor.getSession().setAnnotations([{
+        annotations.push({
             row: error.line - 1,
             column: error.start,
             text: errorText,
             type: "error"
-        }]);
+        });
 	underScoreError(error,"error-message","error");
 	// Second, add context markers (if any)
 	for (var i = 0; i < error.context.length; i++) {
@@ -102,11 +105,13 @@ function compile() {
     // Get configuration flags
     var verify = document.getElementById("verification");
     var counterexamples = document.getElementById("counterexamples");
+    var quickcheck = document.getElementById("quickcheck");    
     // Construct request
     var request = {
 	code: editor.getValue(),
 	verify: verify.checked,
-	counterexamples: counterexamples.checked
+	counterexamples: counterexamples.checked,
+	quickcheck: quickcheck.checked
     };
     // Attempt to stash the current state
     store(request);
