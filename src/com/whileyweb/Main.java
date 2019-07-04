@@ -1,37 +1,26 @@
 package com.whileyweb;
 
-import com.whileyweb.util.HtmlPage;
-import com.whileyweb.pages.FrontPage;
-import java.io.*;
-import java.net.*;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.io.File;
+import java.io.IOException;
+import java.net.BindException;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.http.*;
+import org.apache.http.ConnectionClosedException;
+import org.apache.http.ExceptionLogger;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.bootstrap.HttpServer;
 import org.apache.http.impl.bootstrap.ServerBootstrap;
 
+import com.whileyweb.pages.FrontPage;
+import com.whileyweb.util.HtmlPage;
+
 import jwebkit.http.HttpFileHandler;
-import wyal.lang.WyalFile;
-import wybs.lang.Build;
-import wybs.lang.SyntacticException;
-import wybs.util.SequentialBuildProject;
 import wyc.lang.WhileyFile;
-import wyc.util.TestUtils;
-import static wyc.Activator.WHILEY_PLATFORM;
-import wycc.WyMain;
-import wycc.WyProject;
 import wycc.cfg.ConfigFile;
-import wycc.cfg.Configuration;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.util.DirectoryRoot;
-import wyfs.util.Trie;
-import wyfs.util.VirtualRoot;
 import wyil.lang.WyilFile;
 
 /**
@@ -80,22 +69,10 @@ public class Main {
 	// Main Entry Point
 	// =======================================================================
 	public static void main(String[] argc) throws IOException {
-		Content.Registry registry = new Registry();
-		// Determine project directory
-		Path.Root localRoot = new VirtualRoot(registry);
-		// Read the configuration schema
-		Configuration.Schema schema = Configuration.toCombinedSchema(WyMain.LOCAL_CONFIG_SCHEMA,
-				WHILEY_PLATFORM.getConfigurationSchema());
-		Configuration configuration = Configuration.EMPTY(schema);
-		// Construct environment and execute arguments
-		Build.Project project = new SequentialBuildProject(localRoot);
-		// Initialise the whiley platform
-		wyc.Activator.WHILEY_PLATFORM.initialise(configuration, project);
-		// Refresh system state
-		project.refresh();
+
 		// Attempt to start the web server
 		try {
-			HttpServer server = startWebServer(project);
+			HttpServer server = startWebServer();
 			server.start();
 			server.awaitTermination(-1, TimeUnit.MILLISECONDS);
 		} catch(Exception e) {
@@ -104,7 +81,7 @@ public class Main {
 	}
 
 
-	public static HttpServer startWebServer(Build.Project project) throws IOException {
+	public static HttpServer startWebServer() throws IOException {
 		// Construct appropriate configuration for socket over which HTTP
 		// server will run.
 		SocketConfig socketConfig = SocketConfig.custom().setSoTimeout(1500).build();
@@ -123,7 +100,7 @@ public class Main {
 						.registerHandler("/js/*", new HttpFileHandler(new File("."),TEXT_JAVASCRIPT))
 						.registerHandler("*.png", new HttpFileHandler(new File("."),IMAGE_PNG))
 						.registerHandler("*.gif", new HttpFileHandler(new File("."),IMAGE_GIF))
-						.registerHandler("/compile", new WhileyWebCompiler(project))
+						.registerHandler("/compile", new WhileyWebCompiler())
 						.registerHandler("/", new FrontPage())
 						.registerHandler("*", new HtmlPage())
 						.create();

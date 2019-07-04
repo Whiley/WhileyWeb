@@ -1,5 +1,7 @@
 package com.whileyweb;
 
+import static wyc.Activator.WHILEY_PLATFORM;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -23,27 +25,35 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.protocol.HttpContext;
 
+import com.whileyweb.Main.Registry;
+
 import jwebkit.http.HttpMethodDispatchHandler;
 import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractCompilationUnit.Attribute;
 import wybs.util.AbstractCompilationUnit.Attribute.Span;
+import wybs.util.AbstractCompilationUnit.Value;
+import wybs.util.SequentialBuildProject;
+import wyc.Activator;
 import wyc.cmd.QuickCheck;
 import wyc.lang.WhileyFile;
+import wycc.WyMain;
+import wycc.cfg.Configuration;
+import wycc.cfg.HashMapConfiguration;
+import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
+import wyfs.util.VirtualRoot;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.SyntaxError;
 import wyjs.core.JavaScriptFile;
 
 public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 	private static String WYRT_LIB = "lib/wystd-v0.2.3.jar".replace('/', File.separatorChar);
-	private final Build.Project project;
 
-	public WhileyWebCompiler(Build.Project project) {
+	public WhileyWebCompiler() {
 		super(HttpMethodDispatchHandler.ALLOW_POST);
-		this.project = project;
 	}
 
 	@Override
@@ -86,6 +96,26 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 
 	private String compile(String code, boolean verification, boolean counterexamples, boolean quickcheck)
 			throws IOException, HttpException {
+		Content.Registry registry = new Registry();
+		// Determine project directory
+		Path.Root localRoot = new VirtualRoot(registry);
+		// Read the configuration schema
+		Configuration.Schema schema = Configuration.toCombinedSchema(WyMain.LOCAL_CONFIG_SCHEMA,
+				WHILEY_PLATFORM.getConfigurationSchema());
+		HashMapConfiguration configuration = new HashMapConfiguration(schema);
+		//
+		if(verification) {
+			configuration.write(Activator.VERIFY_CONFIG_OPTION, new Value.Bool(true));
+		}
+		if(counterexamples) {
+			configuration.write(Activator.COUNTEREXAMPLE_CONFIG_OPTION, new Value.Bool(true));
+		}
+		// Construct environment and execute arguments
+		Build.Project project = new SequentialBuildProject(localRoot);
+		// Initialise the whiley platform
+		wyc.Activator.WHILEY_PLATFORM.initialise(configuration, project);
+		// Refresh system state
+		//
 		Path.Root root = project.getRoot();
 		Path.ID srcID = Trie.ROOT.append("src").append("main");
 		Path.ID binID = Trie.ROOT.append("bin").append("main");
