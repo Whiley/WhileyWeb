@@ -1,5 +1,13 @@
 // Global reference to the code editor.
 var editor;
+var examples = [
+    // Hello World
+    "import std::io\nimport std::ascii\n\nmethod main():\n    io::println(\"hello world\")",
+    // Absolute Function
+    "function abs(int x) -> (int r)\nensures r >= 0\nensures (r == x) || (r == -x):\n    //\n    if x >= 0:\n        return x\n    else:\n        return -x",
+    // IndexOf Function
+    "type nat is (int x) where x >= 0\n\nfunction indexOf(int[] items, int item) -> (int r)\n// If valid index returned, element matches item\nensures r >= 0 ==> items[r] == item\n// If invalid index return, no element matches item\nensures r <  0 ==> all { i in 0..|items| | items[i] != item }\n// Return value is between -1 and size of items\nensures r >= -1 && r < |items|:\n    //\n    nat i = 0\n    while i < |items|\n        where all { k in 0 .. i | items[k] != item }:\n        //    \n        if items[i] == item:\n            return i\n        i = i + 1\n    //\n    return -1"
+];
 
 /**
  * Add a new message to the message list above the console.
@@ -29,33 +37,41 @@ function clearMessages() {
  * Display all the compilation errors.
  */
 function showErrors(errors) {
+    var annotations = [];
     clearErrors();
     for(var i=0;i!=errors.length;++i) {
 		var error = errors[i];
-        markError(error);
+	markError(error,annotations);
     }
+    //
+    editor.getSession().setAnnotations(annotations);    
 }
 
 /**
  * Add an appropriate marker for a given JSON error object, as
  * returned from the server.
  */
-function markError(error) {
+function markError(error,annotations) {
+    var errorText = error.text.replace("\\n","\n");
+    if(error.counterexample) {
+	errorText = errorText + "\n\ncounterexample: " + error.counterexample;
+    }
+    //
     if(error.start !== "" && error.end !== "" && error.line !== "") {
 	// First, add error markers
-        editor.getSession().setAnnotations([{
+        annotations.push({
             row: error.line - 1,
             column: error.start,
-            text: error.text.replace("\\n","\n"),
+            text: errorText,
             type: "error"
-        }]);
+        });
 	underScoreError(error,"error-message","error");
 	// Second, add context markers (if any)
 	for (var i = 0; i < error.context.length; i++) {
 	    underScoreError(error.context[i],"context-message","error");
 	}
     } else {
-        addMessage("error", error.text);
+        addMessage("error", errorText);
     }
 }
 
@@ -84,73 +100,138 @@ function clearErrors() {
  */
 function compile() {
     var console = document.getElementById("console");
+    // binArea is where generated JavaScript is place
+    var binArea = document.getElementById("bin");
+    // Get configuration flags
     var verify = document.getElementById("verification");
-    var request = { code: editor.getValue(), verify: verify.checked };
+    var counterexamples = document.getElementById("counterexamples");
+    var quickcheck = document.getElementById("quickcheck");    
+    // Construct request
+    var request = {
+	code: editor.getValue(),
+	verify: verify.checked,
+	counterexamples: counterexamples.checked,
+	quickcheck: quickcheck.checked
+    };
+    // Attempt to stash the current state
+    store(request);
+    //
     $.post(root_url + "/compile", request, function(response) {
         clearMessages();
         console.value = "";
         $("#spinner").hide();
         var response = $.parseJSON(response);
         if(response.result == "success") {
+	    // Store generated JavaScript in binary area
+	    binArea.value = response.js;
+	    // Enable run button
+	    enableRunButton(true);
+	    // Clear all error markers
             clearErrors(true);
-            addMessage("success", "Compiled successfully.");
+	    // Show green success message
+            addMessage("success", "Compiled successfully!");
         } else if(response.result == "errors") {
             var errors = response.errors;
+	    // Clear any generated JavaScript from binary area
+	    binArea.value = "";
+	    // Disable run button
+	    enableRunButton(false);
+	    // Display error message markers
             showErrors(errors);
+	    // Show error message itself
             addMessage("error", "Compilation failed: " + errors.length + " error" + (errors.length > 1 ? "s." : "."));
-        } else if(response.result == "error") {
-            clearErrors(true);
-            addMessage("error", response.error);
-        }
+        } else if(response.result == "exception") {
+	    addMessage("error", "Internal failure: " + response.text);
+	}
     });
     $("#spinner").show();
+}
+
+function println_n6string(str) {
+    var console = document.getElementById("console");
+    console.value = str;
 }
 
 /**
  * Compile and run a given snippet of Whiley code.
  */
 function run() {
+    var bin = document.getElementById("bin");
     var console = document.getElementById("console");
-    var request = { code: editor.getValue() };
-    $.post(root_url + "/run", request, function(response) {
-        clearMessages();
-        console.value = "";
-        $("#spinner").hide();
-        var response = $.parseJSON(response);
-        if(response.result == "success") {
-            clearErrors(true);
-            addMessage("success", "Compiled successfully. Running...");
-            setTimeout(function() {console.value = response.output;}, 500);
-        } else if(response.result == "errors") {
-            var errors = response.errors;
-            showErrors(errors);
-            addMessage("error", "Compilation failed: " + errors.length + " error" + (errors.length > 1 ? "s." : "."));
-        } else if(response.result == "error") {
-            clearErrors(true);
-            addMessage("error", response.error);
-        }
-    });
-    $("#spinner").show();
+    eval(bin.value);
+    eval("main();");
 }
 
 /**
  * Save a given snippet of Whiley code.
  */
 function save() {
-    var request = { code: editor.getValue() };
-    $.post(root_url + "/save", request, function(response) {
-        clearMessages();
-        var response = $.parseJSON(response);
-        $("#spinner").hide();
-        addMessage("success", "Saved program as " + response.id + ".", function() {
-            window.location.replace("?id=" + response.id);
-        });
-    });
-    $("#spinner").show();
+   
+}
+
+/**
+ * Toggle display of generated JavaScript.
+ */
+function showConsole(enable) {
+    document.getElementById("showConsole").checked = enable;    
+    if(enable) {
+	document.getElementById("console").style.display = "block";
+    } else {
+	document.getElementById("console").style.display = "none";
+    }
+}
+
+/**
+ * Toggle display of generated JavaScript.
+ */
+function showJavaScript(enable) {
+    document.getElementById("showJavaScript").checked = enable;
+    if(enable) {
+	document.getElementById("bin").style.display = "block";
+    } else {
+	document.getElementById("bin").style.display = "none";
+    }
+}
+
+function showExample(eg) {
+    editor.setValue(examples[eg]);
+}
+
+/**
+ * Enable or disable run button
+ */
+function enableRunButton(enable) {
+    document.getElementById("run").disabled = !enable;
+}
+
+/**
+ * Attempt to store from local storage
+ */
+function restore(defaultCode) {
+    if (typeof(localStorage) !== "undefined" && localStorage.getItem("whileylabs")) {
+	// Code for localStorage/sessionStorage.
+	return JSON.parse(localStorage.getItem("whileylabs"));
+    } else {
+	// No Storage support..
+	return {code: examples[0], verify: false};
+    }
+}
+
+/**
+ * Save the current state in localstorage
+ */
+function store(request) {
+    if (typeof(localStorage) !== "undefined") {
+	// Code for localStorage/sessionStorage.
+	localStorage.setItem("whileylabs",JSON.stringify(request));
+    } else {
+	// No Storage support..
+    }
 }
 
 // Run this code when the page has loaded.
 $(document).ready(function() {
+    ace.require("ace/ext/language_tools");
     ace.Range = require('ace/range').Range;
     // Enable the editor with Whiley syntax.
     editor = ace.edit("code");
@@ -162,9 +243,29 @@ $(document).ready(function() {
     editor.setHighlightActiveLine(false);
     editor.setShowFoldWidgets(false);
     editor.setShowPrintMargin(false);
+    editor.setAutoScrollEditorIntoView(true);
     editor.getSession().setUseSoftTabs(true);
     editor.getSession().setTabSize(4);
     editor.markers = [];
+    editor.setOptions({
+        enableBasicAutocompletion: true,
+    	enableLiveAutocompletion: true
+    });
+
+  var staticWordCompleter = {
+    getCompletions: function(editor, session, pos, prefix, callback) {
+      var wordList = require("ace/mode/whiley").keywords;
+      callback(null, wordList.map(function(word) {
+        return {
+          caption: word,
+          value: word,
+          meta: "static"
+        };
+      }));
+
+    }
+  };
+  editor.completers = [staticWordCompleter];
 
     $("#code").resizable({
         resize: function() {
@@ -174,19 +275,14 @@ $(document).ready(function() {
         cursor: "default",
         minHeight: $("#code").height()
     });
-
-    // If there is an error, display the error message for 5 seconds.
-    if(error != "") {
-        var error_message = $("<div></div>");
-        error_message.text(error);
-        error_message.addClass("error");
-        error_message.addClass("message");
-        error_message.prependTo("#content");
-        error_message.show().delay(2000).fadeOut(500, function() {
-            // If the user should be redirected to the main page (due to invalid ID for example), do so.
-            if(redirect == "YES") {
-                window.location.replace(root_url + "/");
-            }
-        });
-    }
+    // Disable run button
+    enableRunButton(false);
+    // Hide Console and JavaScript areas
+    showConsole(false);    
+    showJavaScript(false);
+    // Attempt to restore from previous state
+    var previousState = restore("Write code here...");
+    var verifyCheckBox = document.getElementById("verification");
+    editor.setValue(previousState.code);
+    verifyCheckBox.checked = previousState.verify;
 });

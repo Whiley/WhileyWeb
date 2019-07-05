@@ -6,8 +6,8 @@
   <!-- ============================================== -->
 
   <groupId>org.whiley</groupId>
-  <artifactId>whileylabs</artifactId>
-  <version>0.1.0</version>
+  <artifactId>whileyweb</artifactId>
+  <version>1.0.0</version>
   <packaging>jar</packaging>
 
   <licenses>
@@ -29,7 +29,7 @@
   <url>http://whiley.org</url>
 
   <scm>
-    <url>https://github.com/Whiley/WhileyLabs</url>
+    <url>https://github.com/Whiley/WhileyWeb</url>
   </scm>
 
   <developers>
@@ -48,18 +48,13 @@
   <dependencies>
     <dependency>
       <groupId>org.whiley</groupId>
-      <artifactId>wycc</artifactId>
-      <version>LATEST</version>
-    </dependency>
-    <dependency>
-      <groupId>org.whiley</groupId>
       <artifactId>wyc</artifactId>
-      <version>LATEST</version>
+      <version>0.6.6</version>
     </dependency>
     <dependency>
       <groupId>org.whiley</groupId>
-      <artifactId>wytp</artifactId>
-      <version>LATEST</version>
+      <artifactId>wyjs</artifactId>
+      <version>0.5.0</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -83,7 +78,6 @@
     	<version>3.5</version>
     </dependency>
   </dependencies>
-
 
   <!-- ============================================== -->
   <!-- Build -->
