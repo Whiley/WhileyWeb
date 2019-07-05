@@ -1,6 +1,7 @@
 package com.whileyweb;
 
 import static wyc.Activator.WHILEY_PLATFORM;
+import static wyjs.Activator.JS_PLATFORM;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -101,7 +102,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		Path.Root localRoot = new VirtualRoot(registry);
 		// Read the configuration schema
 		Configuration.Schema schema = Configuration.toCombinedSchema(WyMain.LOCAL_CONFIG_SCHEMA,
-				WHILEY_PLATFORM.getConfigurationSchema());
+				WHILEY_PLATFORM.getConfigurationSchema(), JS_PLATFORM.getConfigurationSchema());
 		HashMapConfiguration configuration = new HashMapConfiguration(schema);
 		//
 		if(verification) {
@@ -113,12 +114,14 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		// Construct environment and execute arguments
 		Build.Project project = new SequentialBuildProject(localRoot);
 		// Initialise the whiley platform
-		wyc.Activator.WHILEY_PLATFORM.initialise(configuration, project);
+		WHILEY_PLATFORM.initialise(configuration, project);
+		JS_PLATFORM.initialise(configuration, project);
 		// Refresh system state
 		//
 		Path.Root root = project.getRoot();
 		Path.ID srcID = Trie.ROOT.append("src").append("main");
 		Path.ID binID = Trie.ROOT.append("bin").append("main");
+		Path.ID jsBinID = Trie.ROOT.append("bin").append("js").append("main");
 		//
 		Path.Entry<WhileyFile> srcFile = root.get(srcID, WhileyFile.ContentType);
 		if (srcFile == null) {
@@ -150,9 +153,9 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 				result.put("errors", toErrorMessages(srcFile, errors));
 			} else {
 				// All is well
-				// result.put("js", extractJavaScript(file));
+				Path.Entry<JavaScriptFile> jsFile = root.get(jsBinID, JavaScriptFile.ContentType);
+				result.put("js", extractJavaScript(jsFile));
 				result.put("result", "success");
-				// result.put("js", extractJavaScript(file));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
