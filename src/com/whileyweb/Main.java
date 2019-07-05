@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.SocketTimeoutException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.http.ConnectionClosedException;
@@ -19,8 +20,12 @@ import com.whileyweb.util.HtmlPage;
 import jwebkit.http.HttpFileHandler;
 import wyc.lang.WhileyFile;
 import wycc.cfg.ConfigFile;
+import wycc.lang.SemanticVersion;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.lang.Path.Entry;
+import wyfs.util.DirectoryRoot;
+import wyfs.util.ZipFile;
 import wyil.lang.WyilFile;
 
 /**
@@ -46,7 +51,7 @@ public class Main {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Registry implements Content.Registry {
+	private static class Registry implements Content.Registry {
 		@Override
 		public void associate(Path.Entry e) {
 			String suffix = e.suffix();
@@ -57,6 +62,8 @@ public class Main {
 				e.associate(WyilFile.ContentType, null);
 			} else if (suffix.equals("toml")) {
 				e.associate(ConfigFile.ContentType, null);
+			} else if (suffix.equals("zip")) {
+				e.associate(ZipFile.ContentType, null);
 			}
 		}
 
@@ -65,14 +72,25 @@ public class Main {
 			return t.getSuffix();
 		}
 	}
+
+	private static final Registry REGISTRY = new Registry();
+
 	// =======================================================================
 	// Main Entry Point
 	// =======================================================================
 	public static void main(String[] argc) throws IOException {
-
+		// Determine location of repository
+		String userhome = System.getProperty("user.home");
+		String repositoryLocation = userhome + File.separator + ".whiley" + File.separator + "repository";
+		// Create the repository root
+		DirectoryRoot repository = new DirectoryRoot(repositoryLocation,REGISTRY);
+		// Determine list of installed packages
+		String[] pkgs = determineInstalledPackages(repository);
+		// Determine default configure deps
+		String[] deps = determineDefaultDependencies(pkgs);
 		// Attempt to start the web server
 		try {
-			HttpServer server = startWebServer();
+			HttpServer server = startWebServer(repository,pkgs,deps);
 			server.start();
 			server.awaitTermination(-1, TimeUnit.MILLISECONDS);
 		} catch(Exception e) {
@@ -81,7 +99,7 @@ public class Main {
 	}
 
 
-	public static HttpServer startWebServer() throws IOException {
+	public static HttpServer startWebServer(Path.Root repository, String[] packages, String[] dependencies) throws IOException {
 		// Construct appropriate configuration for socket over which HTTP
 		// server will run.
 		SocketConfig socketConfig = SocketConfig.custom().setSoTimeout(1500).build();
@@ -100,8 +118,8 @@ public class Main {
 						.registerHandler("/js/*", new HttpFileHandler(new File("."),TEXT_JAVASCRIPT))
 						.registerHandler("*.png", new HttpFileHandler(new File("."),IMAGE_PNG))
 						.registerHandler("*.gif", new HttpFileHandler(new File("."),IMAGE_GIF))
-						.registerHandler("/compile", new WhileyWebCompiler())
-						.registerHandler("/", new FrontPage())
+						.registerHandler("/compile", new WhileyWebCompiler(REGISTRY, repository))
+						.registerHandler("/", new FrontPage(packages,dependencies))
 						.registerHandler("*", new HtmlPage())
 						.create();
 				// Attempt to start server
@@ -128,5 +146,36 @@ public class Main {
                 ex.printStackTrace();
             }
 		}
+    }
+
+	private static String[] determineDefaultDependencies(String[] pkgs) {
+		String std = null;
+		SemanticVersion ver = null;
+		for (int i = 0; i != pkgs.length; ++i) {
+			String pkg = pkgs[i];
+			if (pkg.startsWith("std-")) {
+				SemanticVersion v = new SemanticVersion(pkg.substring(5));
+				if (std == null || v.compareTo(ver) > 0) {
+					std = pkg;
+					ver = v;
+				}
+			}
+		}
+		//
+		if (std == null) {
+			return new String[0];
+		} else {
+			return new String[] { std };
+		}
+	}
+
+    private static String[] determineInstalledPackages(DirectoryRoot repository) throws IOException {
+		List<Entry<ZipFile>> pkgs = repository.get(Content.filter("**", ZipFile.ContentType));
+		String[] items = new String[pkgs.size()];
+		for(int i=0;i!=pkgs.size();++i) {
+			items[i] = pkgs.get(i).id().toString();
+		}
+		System.out.println("Found " + items.length + " installed packages.");
+		return items;
     }
 }
