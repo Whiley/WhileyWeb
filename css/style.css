@@ -169,10 +169,13 @@ nav.menubar > ul > li > ul a {
     display: inline-block;    
     font-size: 10pt;
     vertical-align: middle;
+    margin: 0.5em 0.5em 0.5em 0.5em;
+    padding: 0.5em;
+    width: 25%;
+    border: 1px solid #ddd;
 }
 
 #deplist {
-    display: inline-block;    
     font-size: 8pt;
     vertical-align: middle;
 }

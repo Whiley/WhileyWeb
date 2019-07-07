@@ -63,13 +63,13 @@ public class FrontPage extends HtmlPage {
 
 	public void writeDependencyConfig(PrintStream writer) {
 		writer.println("<div id='depbar'>");
-		writer.println("Dependencies:");
-		writer.println("<select id='depselect'>");
-		for(int i=0;i!=packages.length;++i) {
-			writer.println("<option>" + packages[i] + "</option>");
-		}
-		writer.println("</select>");
-		writer.println("<button type='button' onClick='addDependency()' title='Add dependency to build;'>Add</button>");
+		writer.println("<b>Dependencies:</b>");
+//		writer.println("<select id='depselect'>");
+//		for(int i=0;i!=packages.length;++i) {
+//			writer.println("<option>" + packages[i] + "</option>");
+//		}
+//		writer.println("</select>");
+//		writer.println("<button type='button' onClick='addDependency()' title='Add dependency to build;'>Add</button>");
 		writer.println("<ul id='deplist'>");
 		for(String dep : dependencies) {
 			writer.print("<li>" + dep + "</li>");

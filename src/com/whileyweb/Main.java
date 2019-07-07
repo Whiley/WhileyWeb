@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -87,7 +88,7 @@ public class Main {
 		// Determine list of installed packages
 		String[] pkgs = determineInstalledPackages(repository);
 		// Determine default configure deps
-		String[] deps = determineDefaultDependencies(pkgs);
+		String[] deps = determineDefaultDependencies(pkgs,"std");
 		// Attempt to start the web server
 		try {
 			HttpServer server = startWebServer(repository,pkgs,deps);
@@ -148,25 +149,34 @@ public class Main {
 		}
     }
 
-	private static String[] determineDefaultDependencies(String[] pkgs) {
-		String std = null;
+	private static String[] determineDefaultDependencies(String[] pkgs, String... deps) {
+		ArrayList<String> results = new ArrayList<>();
+		for (String dep : deps) {
+			String concrete = findLatestVersion(pkgs, dep);
+			if (concrete != null) {
+				results.add(concrete);
+			}
+
+		}
+		System.out.println("Found " + results.size() + " matching dependencies.");
+		return results.toArray(new String[results.size()]);
+	}
+
+	private static String findLatestVersion(String[] pkgs, String dep) {
+		String prefix = dep + "-v";
+		String best = null;
 		SemanticVersion ver = null;
 		for (int i = 0; i != pkgs.length; ++i) {
 			String pkg = pkgs[i];
-			if (pkg.startsWith("std-")) {
-				SemanticVersion v = new SemanticVersion(pkg.substring(5));
-				if (std == null || v.compareTo(ver) > 0) {
-					std = pkg;
+			if (pkg.startsWith(prefix)) {
+				SemanticVersion v = new SemanticVersion(pkg.substring(prefix.length()));
+				if (best == null || v.compareTo(ver) > 0) {
+					best = pkg;
 					ver = v;
 				}
 			}
 		}
-		//
-		if (std == null) {
-			return new String[0];
-		} else {
-			return new String[] { std };
-		}
+		return best;
 	}
 
     private static String[] determineInstalledPackages(DirectoryRoot repository) throws IOException {
