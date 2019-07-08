@@ -165,6 +165,21 @@ nav.menubar > ul > li > ul a {
     font-size: 10pt;
 }
 
+#depbar {
+    display: inline-block;    
+    font-size: 10pt;
+    vertical-align: middle;
+    margin: 0.5em 0.5em 0.5em 0.5em;
+    padding: 0.5em;
+    width: 25%;
+    border: 1px solid #ddd;
+}
+
+#deplist {
+    font-size: 8pt;
+    vertical-align: middle;
+}
+
 #cmdbar button {
     font-size: 12pt;
     background-color: #e5d3a7;

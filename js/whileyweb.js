@@ -95,6 +95,13 @@ function clearErrors() {
     editor.markers = [];
 }
 
+function addDependency() {
+    var item = document.createElement("LI");
+    var label = document.createTextNode(document.getElementById("depselect").value);
+    item.appendChild(label);
+    document.getElementById("deplist").appendChild(item);
+}
+
 /**
  * Compile a given snippet of Whiley code.
  */
@@ -105,13 +112,15 @@ function compile() {
     // Get configuration flags
     var verify = document.getElementById("verification");
     var counterexamples = document.getElementById("counterexamples");
-    var quickcheck = document.getElementById("quickcheck");    
+    var quickcheck = document.getElementById("quickcheck");
+    var dependencies = $("ul>li").map(function() { return this.innerHTML; }).get();
     // Construct request
     var request = {
 	code: editor.getValue(),
 	verify: verify.checked,
 	counterexamples: counterexamples.checked,
-	quickcheck: quickcheck.checked
+	quickcheck: quickcheck.checked,
+	dependency: dependencies
     };
     // Attempt to stash the current state
     store(request);
