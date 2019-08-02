@@ -4,6 +4,7 @@ import static wyc.Activator.WHILEY_PLATFORM;
 import static wyjs.Activator.JS_PLATFORM;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -52,6 +53,7 @@ import wyfs.util.ZipFileRoot;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.SyntaxError;
 import wyjs.core.JavaScriptFile;
+import wyjs.io.JavaScriptFilePrinter;
 
 public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 	// Construct the configuration schema.
@@ -301,8 +303,10 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 	}
 
 	private static String extractJavaScript(Path.Entry<JavaScriptFile> file) throws IOException {
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		JavaScriptFile jsf = file.read();
-		return jsf.toString();
+		new JavaScriptFilePrinter(output).write(jsf);
+		return new String(output.toByteArray());
 	}
 
 	/**
