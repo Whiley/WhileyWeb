@@ -1,0 +1,13 @@
+[package]
+name="wyweb"
+authors=["David J. Pearce"]
+version="0.1.0"
+
+[build]
+platforms=["whiley","js"]
+
+[build.whiley]
+source="src/whiley"
+
+[dependencies]
+dom="0.1.0"

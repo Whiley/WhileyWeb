@@ -117,6 +117,7 @@ public class Main {
 						.setExceptionLogger(new Logger())
 						.registerHandler("/css/*", new HttpFileHandler(new File("."),TEXT_CSS))
 						.registerHandler("/js/*", new HttpFileHandler(new File("."),TEXT_JAVASCRIPT))
+						.registerHandler("/bin/js/*", new HttpFileHandler(new File("."),TEXT_JAVASCRIPT))
 						.registerHandler("*.png", new HttpFileHandler(new File("."),IMAGE_PNG))
 						.registerHandler("*.gif", new HttpFileHandler(new File("."),IMAGE_GIF))
 						.registerHandler("/compile", new WhileyWebCompiler(REGISTRY, repository))

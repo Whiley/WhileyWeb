@@ -5,16 +5,19 @@ import static wyjs.Activator.JS_PLATFORM;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
@@ -22,10 +25,13 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
+import org.apache.http.ParseException;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
 
 import jwebkit.http.HttpMethodDispatchHandler;
 import wybs.lang.Build;
@@ -74,32 +80,28 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 	public void post(HttpRequest request, HttpResponse response, HttpContext context)
 			throws HttpException, IOException {
 		HttpEntity entity = checkHasEntity(request);
-		List<NameValuePair> params = URLEncodedUtils.parse(entity);
-		String code = null;
-		boolean verification = false;
-		boolean counterexamples = false;
-		boolean quickcheck = false;
-		ArrayList<String> dependencies = new ArrayList<>();
-		for (NameValuePair p : params) {
-			if (p.getName().equals("code")) {
-				code = p.getValue();
-			} else if (p.getName().equals("verify")) {
-				verification = Boolean.parseBoolean(p.getValue());
-			} else if (p.getName().equals("counterexamples")) {
-				counterexamples = Boolean.parseBoolean(p.getValue());
-			} else if (p.getName().equals("quickcheck")) {
-				quickcheck = Boolean.parseBoolean(p.getValue());
-			} else if(p.getName().equals("dependency[]")) {
-				dependencies.add(p.getValue());
-			}
-		}
-		if (code == null) {
-			response.setStatusCode(HttpStatus.SC_BAD_REQUEST);
-		} else {
-			String r = compile(code, verification, counterexamples, quickcheck, dependencies.toArray(new String[dependencies.size()]));
+		try {
+			// Parse compile request
+			JSONObject json = new JSONObject(EntityUtils.toString(entity));
+			// Extract key fields
+			String code = json.getString("code");
+			boolean verification = json.getBoolean("verify");
+			boolean counterexamples = json.getBoolean("counterexamples");
+			boolean quickcheck = json.getBoolean("quickcheck");
+			String[] dependencies = toStringArray(json.getJSONArray("dependencies"));
+			// Run the build
+			String r = compile(code, verification, counterexamples, quickcheck, dependencies);
+			// Configure response
 			response.setEntity(new StringEntity(r)); // ContentType.APPLICATION_JSON fails?
 			response.setStatusCode(HttpStatus.SC_OK);
+			// Done
+			return;
+		} catch (ParseException e) {
+		} catch (JSONException e) {
+		} catch (IOException e) {
 		}
+		// Malformed Request
+		response.setStatusCode(HttpStatus.SC_BAD_REQUEST);
 	}
 
 	private HttpEntity checkHasEntity(HttpRequest request) throws HttpException {
@@ -187,6 +189,14 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 	// Helpers
 	// ==================================================================
 
+	public String[] toStringArray(JSONArray arr) throws JSONException {
+		String[] items = new String[arr.length()];
+		for(int i=0;i!=items.length;++i) {
+			items[i] = arr.getString(i);
+		}
+		return items;
+	}
+	
 	/**
 	 * Add any declared dependencies to the set of project roots. The challenge here
 	 * is that we may need to download, install and compile these dependencies if
