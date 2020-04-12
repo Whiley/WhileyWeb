@@ -1,4 +1,4 @@
-define('ace/mode/whiley', function(require, exports, module) {
+ace.define('ace/mode/whiley', function(require, exports, module) {
 
     var oop = require("ace/lib/oop");
     var TextMode = require("ace/mode/text").Mode;
@@ -25,7 +25,7 @@ define('ace/mode/whiley', function(require, exports, module) {
     exports.keywords = getKeywords();
 });
 
-define('ace/mode/whiley_highlight_rules', function(require, exports, module) {
+ace.define('ace/mode/whiley_highlight_rules', function(require, exports, module) {
 
     var oop = require("ace/lib/oop");
     var TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules;

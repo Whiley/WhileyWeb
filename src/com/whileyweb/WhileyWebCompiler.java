@@ -44,6 +44,7 @@ import wybs.util.SequentialBuildProject;
 import wyc.Activator;
 import wyc.cmd.QuickCheck;
 import wyc.lang.WhileyFile;
+import wyc.util.TestUtils.Environment;
 import wycc.WyMain;
 import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
@@ -57,14 +58,22 @@ import wyfs.util.VirtualRoot;
 import wyfs.util.ZipFile;
 import wyfs.util.ZipFileRoot;
 import wyil.lang.WyilFile;
-import wyil.lang.WyilFile.SyntaxError;
+import wyil.lang.WyilFile.Attr.SyntaxError;
 import wyjs.core.JavaScriptFile;
 import wyjs.io.JavaScriptFilePrinter;
 
 public class WhileyWebCompiler extends HttpMethodDispatchHandler {
+	// Have no idea why this is needed.
+	public static Configuration.Schema TEMPORARY_SCHEMA = Configuration.fromArray(
+			Configuration.UNBOUND_STRING(Activator.PKGNAME_CONFIG_OPTION, "list of globally installed plugins", true));
+
+
 	// Construct the configuration schema.
-	private final static Configuration.Schema SCHEMA = Configuration.toCombinedSchema(WyMain.LOCAL_CONFIG_SCHEMA,
-			WHILEY_PLATFORM.getConfigurationSchema(), JS_PLATFORM.getConfigurationSchema(),
+	private final static Configuration.Schema SCHEMA = Configuration.toCombinedSchema(
+			TEMPORARY_SCHEMA,
+			WyMain.LOCAL_CONFIG_SCHEMA,
+			WHILEY_PLATFORM.getConfigurationSchema(),
+			JS_PLATFORM.getConfigurationSchema(),
 			QuickCheck.DESCRIPTOR.getConfigurationSchema());
 
 	private final Content.Registry registry;
@@ -119,6 +128,8 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		Path.Root localRoot = new VirtualRoot(registry);
 		// Read the configuration schema
 		HashMapConfiguration configuration = new HashMapConfiguration(SCHEMA);
+		// Write default package name
+		configuration.write(Activator.PKGNAME_CONFIG_OPTION,new Value.UTF8("main"));
 		//
 		if(verification) {
 			configuration.write(Activator.VERIFY_CONFIG_OPTION, new Value.Bool(true));
@@ -126,8 +137,10 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		if(counterexamples) {
 			configuration.write(Activator.COUNTEREXAMPLE_CONFIG_OPTION, new Value.Bool(true));
 		}
+		// Construct temporary build environment
+		Build.Environment environment = new Environment(localRoot,false);
 		// Construct environment and execute arguments
-		Build.Project project = new SequentialBuildProject(localRoot);
+		Build.Project project = new SequentialBuildProject(environment,localRoot);
 		// Initialise the whiley platform
 		WHILEY_PLATFORM.initialise(configuration, project);
 		JS_PLATFORM.initialise(configuration, project);
@@ -153,14 +166,15 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 			List<Build.Package> pkgs = resolvePackageDependencies(repository, SCHEMA, registry, dependencies);
 			project.getPackages().addAll(pkgs);
 			//
-			boolean ok = project.build(ForkJoinPool.commonPool()).get();
+			boolean ok = project.build(ForkJoinPool.commonPool(), environment.getMeter()).get();
 			// Extract the binary file
 			Path.Entry<WyilFile> binFile = root.get(binID, WyilFile.ContentType);
 			WyilFile binary = binFile.read();
 			// Perform quickcheck testing!
 			if(ok && quickcheck) {
 				QuickCheck.Context context = QuickCheck.DEFAULT_CONTEXT;
-				ok = new QuickCheck(project, null, System.out, System.err).check(binary, context);
+//				ok = new QuickCheck(project, null, System.out, System.err).check(binary, context);
+				throw new RuntimeException("Implement me!");
 			}
 			// Flush everything to disk
 			root.flush();
@@ -196,7 +210,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		}
 		return items;
 	}
-	
+
 	/**
 	 * Add any declared dependencies to the set of project roots. The challenge here
 	 * is that we may need to download, install and compile these dependencies if
@@ -228,7 +242,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 				} else {
 					ConfigFile pkgcfg = pkgRoot.get(Trie.fromString("wy"), ConfigFile.ContentType).read();
 					// Construct a package representation of this root.
-					Build.Package pkg = new Package(pkgRoot, pkgcfg.toConfiguration(schema));
+					Build.Package pkg = new Package(pkgRoot, pkgcfg.toConfiguration(schema, false));
 					// Add a relative ZipFile root
 					packages.add(pkg);
 				}

@@ -91,9 +91,11 @@ public class HtmlPage implements HttpRequestHandler {
 		writer.println("<link href=\"css/style.css\" rel=\"stylesheet\" type=\"text/css\">");
 		writer.println("<script type=\"text/javascript\" src=\"js/ace.js\" charset=\"utf-8\"></script>");
 		writer.println("<script type=\"text/javascript\" src=\"js/mode-whiley.js\"></script>");
+		writer.println("<script type=\"text/javascript\" src=\"js/theme-eclipse.js\"></script>");
 		writer.println("<script type=\"text/javascript\" src=\"bin/js/std.js\"></script>");
 		writer.println("<script type=\"text/javascript\" src=\"bin/js/js.js\"></script>");
 		writer.println("<script type=\"text/javascript\" src=\"bin/js/dom.js\"></script>");
+		writer.println("<script type=\"text/javascript\" src=\"bin/js/ace.js\"></script>");
 	    writer.println("<script type=\"text/javascript\" src=\"bin/js/wyweb.js\"></script>");
 		writer.println("</head>");
 	}
