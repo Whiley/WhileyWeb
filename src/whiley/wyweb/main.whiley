@@ -23,10 +23,20 @@ type State is &{
     Vector<uint> markers,    
     // Handle for MessageBox
     MessageBox msgbox,
+    // Flag for verification
+    bool verify,
+    // Flag for counterexamples
+    bool counterexamples,
     //
     ...
 }
-    
+
+method toggleVerification(State s):
+    s->verify = !s->verify
+
+method toggleCounterExamples(State s):
+    s->counterexamples = !s->counterexamples
+
 method print(Document doc, string s):
     // Extract content pane
     Element content = doc->getElementById("content")
@@ -94,11 +104,26 @@ method processCompilationResponse(string response, State state):
         
 // Request compilation from server
 method requestCompilation(Event e, State state):
-    compiler::Request cr = compiler::Request(state->editor->getValue())
+    //
+    compiler::Request cr = compiler::Request(state->verify,state->counterexamples,state->editor->getValue())
     // Turn into JSON string
     string r = JSON::stringify(cr)
     // Post request
     post("/compile",r,&(string s -> processCompilationResponse(s,state)), &(int i -> alert("ERROR")))
+
+method appendToggle(Document doc, Element parent, string id, string label, string title, bool checked) -> Element:
+    Element tog = doc->createElement("input")
+    tog->id = id
+    tog->setAttribute("type","checkbox")
+    if checked:
+        tog->setAttribute("checked","checked")
+    tog->setAttribute("title",title)
+    Element l = doc->createElement("label")
+    l->setAttribute("for",id)
+    l->appendChild(doc->createTextNode(label))
+    parent->appendChild(tog)    
+    parent->appendChild(l)
+    return tog
 
 public export method run(Document doc):
     // Extract content pane
@@ -106,11 +131,20 @@ public export method run(Document doc):
     // Create editor div
     Element editorDiv = doc->createElement("div")
     editorDiv->id = "code"
-    // Create compile button
+    content->appendChild(editorDiv)   
+    // Create command bar
+    Element cmdBar = doc->createElement("div")
+    cmdBar->id = "cmdbar"
     Element compileButton = doc->createElement("button")
     compileButton->appendChild(doc->createTextNode("Compile"))
-    content->appendChild(editorDiv)
-    content->appendChild(compileButton)
+    cmdBar->appendChild(compileButton)
+    content->appendChild(cmdBar)   
+    // Create config bar
+    Element configBar = doc->createElement("div")
+    configBar->id = "configbar"
+    Element verify = appendToggle(doc,configBar,"verification","Verification","Enable of disable compile-tile verification", true)
+    Element counterexamples = appendToggle(doc,configBar,"counterexamples","Counterexamples","Enable or disable counterexample generation", false)
+    content->appendChild(configBar)
     // Configure ACE editor
     Editor aceEditor = ace::edit(editorDiv)
     aceEditor->setTheme("ace/theme/eclipse")
@@ -124,9 +158,17 @@ public export method run(Document doc):
         // empty set of markers
         markers: Vector(),
         // Empty message box
-        msgbox: msgbox
+        msgbox: msgbox,
+        // Verification toggle
+        verify: true,
+        // Counterexample toggle
+        counterexamples: false
     }
-    // Configure compile event
+    // Configure compile event    
     compileButton->addEventListener("click",&(Event e -> requestCompilation(e,state)))
+    // Configure verificvation toggle
+    verify->addEventListener("change",&(Event s -> toggleVerification(state)))
+    // Configure counterexample toggle
+    counterexamples->addEventListener("change",&(Event s -> toggleCounterExamples(state)))
     
 
