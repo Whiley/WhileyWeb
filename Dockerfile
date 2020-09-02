@@ -1,19 +1,16 @@
-FROM ubuntu:16.04
+FROM openjdk:8-alpine
 
 # Update image and install git
-RUN apt-get update -y && apt-get install -y \
-    git \
-    openjdk-8-jdk \
-    ant
+RUN apk update && apk add --no-cache apache-ant 
 
 # Copy repository data from here
-CMD mkdir /home/WhileyLabs
-COPY . /home/WhileyLabs/
+CMD mkdir /home/WhileyWeb
+COPY . /home/WhileyWeb/
 
 # Set the working directory
-WORKDIR /home/WhileyLabs/
+WORKDIR /home/WhileyWeb/
 # Set the default command
-CMD ["./scripts/docker.sh"]
+CMD ["ant","run"]
 
 # Expose port
 EXPOSE 8080:80
