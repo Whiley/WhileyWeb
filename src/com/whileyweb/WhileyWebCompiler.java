@@ -4,6 +4,7 @@ import static wyc.Activator.WHILEY_PLATFORM;
 import static wyjs.Activator.JS_PLATFORM;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -26,8 +27,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.protocol.HttpContext;
 
-import com.whileyweb.Main.Registry;
-
 import jwebkit.http.HttpMethodDispatchHandler;
 import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
@@ -40,21 +39,35 @@ import wyc.Activator;
 import wyc.cmd.QuickCheck;
 import wyc.lang.WhileyFile;
 import wycc.WyMain;
+import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
 import wycc.cfg.HashMapConfiguration;
+import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 import wyfs.util.VirtualRoot;
+import wyfs.util.ZipFile;
+import wyfs.util.ZipFileRoot;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.SyntaxError;
 import wyjs.core.JavaScriptFile;
+import wyjs.io.JavaScriptFilePrinter;
 
 public class WhileyWebCompiler extends HttpMethodDispatchHandler {
-	private static String WYRT_LIB = "lib/wystd-v0.2.3.jar".replace('/', File.separatorChar);
+	// Construct the configuration schema.
+	private final static Configuration.Schema SCHEMA = Configuration.toCombinedSchema(WyMain.LOCAL_CONFIG_SCHEMA,
+			WHILEY_PLATFORM.getConfigurationSchema(), JS_PLATFORM.getConfigurationSchema(),
+			QuickCheck.DESCRIPTOR.getConfigurationSchema());
 
-	public WhileyWebCompiler() {
+	private final Content.Registry registry;
+	private final Path.Root repository;
+
+	public WhileyWebCompiler(Content.Registry registry, Path.Root repository) throws IOException {
 		super(HttpMethodDispatchHandler.ALLOW_POST);
+		this.registry = registry;
+		this.repository = repository;
 	}
 
 	@Override
@@ -66,6 +79,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		boolean verification = false;
 		boolean counterexamples = false;
 		boolean quickcheck = false;
+		ArrayList<String> dependencies = new ArrayList<>();
 		for (NameValuePair p : params) {
 			if (p.getName().equals("code")) {
 				code = p.getValue();
@@ -75,12 +89,14 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 				counterexamples = Boolean.parseBoolean(p.getValue());
 			} else if (p.getName().equals("quickcheck")) {
 				quickcheck = Boolean.parseBoolean(p.getValue());
+			} else if(p.getName().equals("dependency[]")) {
+				dependencies.add(p.getValue());
 			}
 		}
 		if (code == null) {
 			response.setStatusCode(HttpStatus.SC_BAD_REQUEST);
 		} else {
-			String r = compile(code, verification, counterexamples, quickcheck);
+			String r = compile(code, verification, counterexamples, quickcheck, dependencies.toArray(new String[dependencies.size()]));
 			response.setEntity(new StringEntity(r)); // ContentType.APPLICATION_JSON fails?
 			response.setStatusCode(HttpStatus.SC_OK);
 		}
@@ -95,15 +111,12 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		}
 	}
 
-	private String compile(String code, boolean verification, boolean counterexamples, boolean quickcheck)
+	private String compile(String code, boolean verification, boolean counterexamples, boolean quickcheck, String[] dependencies)
 			throws IOException, HttpException {
-		Content.Registry registry = new Registry();
 		// Determine project directory
 		Path.Root localRoot = new VirtualRoot(registry);
 		// Read the configuration schema
-		Configuration.Schema schema = Configuration.toCombinedSchema(WyMain.LOCAL_CONFIG_SCHEMA,
-				WHILEY_PLATFORM.getConfigurationSchema(), JS_PLATFORM.getConfigurationSchema());
-		HashMapConfiguration configuration = new HashMapConfiguration(schema);
+		HashMapConfiguration configuration = new HashMapConfiguration(SCHEMA);
 		//
 		if(verification) {
 			configuration.write(Activator.VERIFY_CONFIG_OPTION, new Value.Bool(true));
@@ -134,6 +147,10 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		// Create project
 		HashMap<String, Object> result = new HashMap<>();
 		try {
+			// Resolve package dependencies
+			List<Build.Package> pkgs = resolvePackageDependencies(repository, SCHEMA, registry, dependencies);
+			project.getPackages().addAll(pkgs);
+			//
 			boolean ok = project.build(ForkJoinPool.commonPool()).get();
 			// Extract the binary file
 			Path.Entry<WyilFile> binFile = root.get(binID, WyilFile.ContentType);
@@ -158,12 +175,77 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 				result.put("result", "success");
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 			// Some kind of internal failure has occurred, so simply report this.
 			result.put("result", "exception");
 			result.put("text", e.getMessage());
 		}
 		return toJsonString(result);
+	}
+
+	// ==================================================================
+	// Helpers
+	// ==================================================================
+
+	/**
+	 * Add any declared dependencies to the set of project roots. The challenge here
+	 * is that we may need to download, install and compile these dependencies if
+	 * they are not currently installed.
+	 *
+	 * @throws IOException
+	 */
+	private static List<Build.Package> resolvePackageDependencies(Path.Root repository,
+			Configuration.Schema schema, Content.Registry registry, String... deps) throws IOException {
+		ArrayList<Build.Package> packages = new ArrayList<>();
+		// Resolve each dependencies and add to project roots
+		for (int i = 0; i != deps.length; ++i) {
+			String dep = deps[i];
+			// Construct path to the config file
+			Trie root = Trie.fromString(dep);
+			// Attempt to resolve it.
+			if (!repository.exists(root, ZipFile.ContentType)) {
+				// FIXME: handle better error handling.
+				throw new RuntimeException("missing dependency \"" + dep + "\"");
+			} else {
+				// Extract entry for ZipFile
+				Path.Entry<ZipFile> zipfile = repository.get(root, ZipFile.ContentType);
+				// Construct root repesenting this ZipFile
+				Path.Root pkgRoot = new ZipFileRoot(zipfile, registry);
+				// Extract configuration from package
+				Path.Entry<ConfigFile> entry = pkgRoot.get(Trie.fromString("wy"), ConfigFile.ContentType);
+				if (entry == null) {
+					throw new RuntimeException("corrupt package (missing wy.toml) \"" + dep + "\"");
+				} else {
+					ConfigFile pkgcfg = pkgRoot.get(Trie.fromString("wy"), ConfigFile.ContentType).read();
+					// Construct a package representation of this root.
+					Build.Package pkg = new Package(pkgRoot, pkgcfg.toConfiguration(schema));
+					// Add a relative ZipFile root
+					packages.add(pkg);
+				}
+			}
+		}
+		//
+		return packages;
+	}
+
+	private static class Package implements Build.Package {
+		private final Path.Root root;
+		private final Configuration configuration;
+
+		public Package(Path.Root root, Configuration configuration) {
+			this.root = root;
+			this.configuration = configuration;
+		}
+
+		@Override
+		public Configuration getConfiguration() {
+			return configuration;
+		}
+
+		@Override
+		public Path.Root getRoot() {
+			return root;
+		}
 	}
 
 	/**
@@ -221,8 +303,10 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 	}
 
 	private static String extractJavaScript(Path.Entry<JavaScriptFile> file) throws IOException {
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		JavaScriptFile jsf = file.read();
-		return jsf.toString();
+		new JavaScriptFilePrinter(output).write(jsf);
+		return new String(output.toByteArray());
 	}
 
 	/**
