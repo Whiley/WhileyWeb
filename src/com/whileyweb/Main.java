@@ -23,8 +23,10 @@ import wyc.lang.WhileyFile;
 import wycc.cfg.ConfigFile;
 import wycc.lang.SemanticVersion;
 import wyfs.lang.Content;
+import wyfs.lang.Content.Type;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
+import wyfs.util.DefaultContentRegistry;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.ZipFile;
 import wyil.lang.WyilFile;
@@ -52,29 +54,9 @@ public class Main {
 	 * @author David J. Pearce
 	 *
 	 */
-	private static class Registry implements Content.Registry {
-		@Override
-		public void associate(Path.Entry e) {
-			String suffix = e.suffix();
-
-			if (suffix.equals("whiley")) {
-				e.associate(WhileyFile.ContentType, null);
-			} else if (suffix.equals("wyil")) {
-				e.associate(WyilFile.ContentType, null);
-			} else if (suffix.equals("toml")) {
-				e.associate(ConfigFile.ContentType, null);
-			} else if (suffix.equals("zip")) {
-				e.associate(ZipFile.ContentType, null);
-			}
-		}
-
-		@Override
-		public String suffix(Content.Type<?> t) {
-			return t.getSuffix();
-		}
-	}
-
-	private static final Registry REGISTRY = new Registry();
+	private static final Content.Registry REGISTRY = new DefaultContentRegistry()
+			.register(WhileyFile.ContentType, "whiley").register(WyilFile.ContentType, "wyil")
+			.register(ConfigFile.ContentType, "toml").register(ZipFile.ContentType, "zip");
 
 	// =======================================================================
 	// Main Entry Point
@@ -117,6 +99,7 @@ public class Main {
 						.setExceptionLogger(new Logger())
 						.registerHandler("/css/*", new HttpFileHandler(new File("."),TEXT_CSS))
 						.registerHandler("/js/*", new HttpFileHandler(new File("."),TEXT_JAVASCRIPT))
+						.registerHandler("/bin/js/*", new HttpFileHandler(new File("."),TEXT_JAVASCRIPT))
 						.registerHandler("*.png", new HttpFileHandler(new File("."),IMAGE_PNG))
 						.registerHandler("*.gif", new HttpFileHandler(new File("."),IMAGE_GIF))
 						.registerHandler("/compile", new WhileyWebCompiler(REGISTRY, repository))
