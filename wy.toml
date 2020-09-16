@@ -7,8 +7,8 @@ version="0.1.0"
 platforms=["whiley","js"]
 
 [build.whiley]
-source="src/whiley"
+source="src/main/whiley"
 
 [dependencies]
-dom="0.1.0"
+web="0.3.0"
 ace="0.1.0"
