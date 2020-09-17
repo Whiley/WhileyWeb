@@ -17,8 +17,9 @@ public class FrontPage extends HtmlPage {
 
 	@Override
 	public void writeBodyContent(PrintStream writer, Map<String,String> parameters) {
+		writer.println("<div id='root'></div>");
 		writer.println("<script>");
-		writer.println("window.onload = function() { wyweb$main$run(document); };");
+		writer.println("window.onload = function() { wyweb$nmain$run(document.getElementById('root'),window); };");
 		writer.println("</script>");
 	}
 }

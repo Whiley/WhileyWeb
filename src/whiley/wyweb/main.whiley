@@ -6,7 +6,7 @@ import to_string from std::ascii
 import uint from std::integer
 import string from js::core
 import js::JSON
-import w3c::dom with Element,Document,TextArea,Event,alert
+import w3c::dom with Element,Window,Document,TextArea,Event
 
 import ace::ace
 import Editor from ace::editor
@@ -104,12 +104,13 @@ method processCompilationResponse(string response, State state):
         
 // Request compilation from server
 method requestCompilation(Event e, State state):
+    Window w = state->msgbox.window
     //
     compiler::Request cr = compiler::Request(state->verify,state->counterexamples,state->editor->getValue())
     // Turn into JSON string
     string r = JSON::stringify(cr)
     // Post request
-    post("/compile",r,&(string s -> processCompilationResponse(s,state)), &(int i -> alert("ERROR")))
+    post("/compile",r,&(string s -> processCompilationResponse(s,state)), &(int i -> w->alert("ERROR")))
 
 method appendToggle(Document doc, Element parent, string id, string label, string title, bool checked) -> Element:
     Element tog = doc->createElement("input")
@@ -125,7 +126,8 @@ method appendToggle(Document doc, Element parent, string id, string label, strin
     parent->appendChild(l)
     return tog
 
-public export method run(Document doc):
+public export method run(Window win):
+    Document doc = win->document
     // Extract content pane
     Element content = doc->getElementById("content")
     // Create editor div
@@ -150,7 +152,7 @@ public export method run(Document doc):
     aceEditor->setTheme("ace/theme/eclipse")
     aceEditor->getSession()->setMode("ace/mode/whiley")
     // Configure MessageBox
-    MessageBox msgbox = msgbox::create(doc)
+    MessageBox msgbox = msgbox::create(win)
     content->appendChild(msgbox.element)
     // Create empty state
     State state = new {

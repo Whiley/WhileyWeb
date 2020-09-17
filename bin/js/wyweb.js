@@ -1,4 +1,12 @@
 'use strict';
+function main$view$Q5State$Q4Node(s) {
+   let b = web$html$button$aQ9AttributeQ4Node$Q4Node([], "OK");
+   return web$html$div$aQ4Node$Q4Node([Wy.copy(b), "Hello World"]);
+}
+function main$main() {
+   let state = new Wy.Record({counter: 0});
+   return new Wy.Record({model: Wy.copy(state), view: main$view$Q5State$Q4Node});
+}
 function wyweb$compiler$Request$BBQ6string$Q7Request(verify, counterexamples, code) {
    return new Wy.Record({code: Wy.copy(code), verify: verify, counterexamples: counterexamples, quickcheck: false, dependencies: []});
 }
@@ -104,17 +112,18 @@ function wyweb$main$processCompilationResponse$Q6stringQ5State$V(response, state
    }
 }
 function wyweb$main$requestCompilation$Q5EventQ5State$V(e, state) {
+   let w = state.msgbox.window;
    let cr = wyweb$compiler$Request$BBQ6string$Q7Request(state.verify, state.counterexamples, state.editor.getValue());
    let r = js$JSON$stringify(Wy.copy(cr));
    wyweb$io$post$Q6stringQ6stringmQ6stringVmIV$V("/compile", Wy.copy(r), function(state) {
       return function(s) {
          return wyweb$main$processCompilationResponse$Q6stringQ5State$V(Wy.copy(s), state);
       };
-   }(state), function() {
+   }(state), function(w) {
       return function(i) {
-         return w3c$dom$alert("ERROR");
+         return w.alert("ERROR");
       };
-   }());
+   }(w));
 }
 function wyweb$main$appendToggle$Q8DocumentQ7ElementQ6stringQ6stringQ6stringB$Q7Element(doc, parent, id, label, title, checked) {
    let tog = doc.createElement("input");
@@ -134,7 +143,8 @@ function wyweb$main$appendToggle$Q8DocumentQ7ElementQ6stringQ6stringQ6stringB$Q7
    parent.appendChild(l);
    return tog;
 }
-function wyweb$main$run(doc) {
+function wyweb$main$run(win) {
+   let doc = win.document;
    let content = doc.getElementById("content");
    let editorDiv = doc.createElement("div");
     {
@@ -162,7 +172,7 @@ function wyweb$main$run(doc) {
    let aceEditor = ace$ace$edit$u2Q6stringQ7Element$Q6Editor(editorDiv);
    aceEditor.setTheme("ace/theme/eclipse");
    aceEditor.getSession().setMode("ace/mode/whiley");
-   let msgbox = wyweb$msgbox$create$Q8Document$Q10MessageBox(doc);
+   let msgbox = wyweb$msgbox$create$Q6Window$Q10MessageBox(win);
    content.appendChild(msgbox.element);
    let state = new Wy.Record({editor: aceEditor, markers: std$collections$vector$Vector$V$Q6Vector(), msgbox: Wy.copy(msgbox), verify: true, counterexamples: false});
    compileButton.addEventListener("click", function(state) {
@@ -181,26 +191,81 @@ function wyweb$main$run(doc) {
       };
    }(state));
 }
-function wyweb$msgbox$create$Q8Document$Q10MessageBox(doc) {
-   let div = doc.createElement("div");
+function wyweb$msgbox$create$Q6Window$Q10MessageBox(win) {
+   let div = win.document.createElement("div");
     {
       const $12 = "messages";
       div.id = $12;
    }
-   return new Wy.Record({document: doc, element: div});
+   return new Wy.Record({window: win, element: div});
 }
 function wyweb$msgbox$add$Q10MessageBoxQ6stringQ6string$V(box, clazz, text) {
-   let doc = box.document;
+   let doc = box.window.document;
    let div = doc.createElement("div");
    div.appendChild(doc.createTextNode(Wy.copy(text)));
    div.classList.add("message");
    div.classList.add(Wy.copy(clazz));
    box.element.appendChild(div);
-   w3c$dom$setTimeout(function(box, div) {
+   box.window.setTimeout(function(box, div) {
       return function() {
          return box.element.removeChild(div);
       };
    }(box, div), 1000);
+}
+function wyweb$nmain$compile_clicked$Q5State$Q5StateaQ6Action(s) {
+   let as;
+   let sp;
+   return [Wy.copy(s), [web$io$query$Q5queryQ8consumer$Q6Action(wyweb$nmain$get_editor_text$Q3dom6Window$Q6string, wyweb$nmain$compile_ready$Q5StateQ6string$Q5StateaQ6Action)]];
+}
+function wyweb$nmain$compile_ready$Q5StateQ6string$Q5StateaQ6Action(s, text) {
+   let as;
+   let sp;
+   let cr = wyweb$compiler$Request$BBQ6string$Q7Request(false, false, Wy.copy(text));
+   let r = js$JSON$stringify(Wy.copy(cr));
+   return [Wy.copy(s), [web$io$post$Q6stringQ6stringQ8consumerQ7handler$Q6Action("/compile", Wy.copy(r), wyweb$nmain$compile_success$Q5StateQ6string$Q5StateaQ6Action, wyweb$nmain$compile_error$Q5State$Q5StateaQ6Action)]];
+}
+function wyweb$nmain$compile_success$Q5StateQ6string$Q5StateaQ6Action(s, response) {
+   let as;
+   let sp;
+   return [Wy.copy(s), [web$io$alert$Q6string$Q6Action("compilation success")]];
+}
+function wyweb$nmain$compile_error$Q5State$Q5StateaQ6Action(s) {
+   let as;
+   let sp;
+   return [Wy.copy(s), [web$io$alert$Q6string$Q6Action("compilation error")]];
+}
+function wyweb$nmain$view$Q5State$Q4Node(s) {
+   let editor = wyweb$nmain$create_editor$Q5State$Q4Node(Wy.copy(s));
+   let toolbar = wyweb$nmain$create_toolbar$Q5State$Q4Node(Wy.copy(s));
+   return web$html$div$aQ4Node$Q4Node([Wy.copy(editor), Wy.copy(toolbar)]);
+}
+function wyweb$nmain$create_editor$Q5State$Q4Node(s) {
+   return web$html$div$aQ9AttributeQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("code")], "");
+}
+function wyweb$nmain$create_toolbar$Q5State$Q4Node(s) {
+   let cb = web$html$button$aQ9AttributeQ4Node$Q4Node([web$html$click$Q7handler$Q9Attribute(function() {
+      return function(e, st) {
+         return wyweb$nmain$compile_clicked$Q5State$Q5StateaQ6Action(Wy.copy(st));
+      };
+   }())], "Compile");
+   return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("cmdbar")], [Wy.copy(cb)]);
+}
+function wyweb$nmain$run(root, window) {
+   let state = new Wy.Record({counter: 0});
+   let app = new Wy.Record({model: Wy.copy(state), view: wyweb$nmain$view$Q5State$Q4Node});
+   web$app$run(Wy.copy(app), root, window);
+   wyweb$nmain$configure_editor$Q3dom6Window$V(window);
+}
+function wyweb$nmain$configure_editor$Q3dom6Window$V(w) {
+   let div = w.document.getElementById("code");
+   let aceEditor = ace$ace$edit$u2Q6stringQ7Element$Q6Editor(div);
+   aceEditor.setTheme("ace/theme/eclipse");
+   aceEditor.getSession().setMode("ace/mode/whiley");
+}
+function wyweb$nmain$get_editor_text$Q3dom6Window$Q6string(w) {
+   let div = w.document.getElementById("code");
+   let aceEditor = ace$ace$edit$u2Q6stringQ7Element$Q6Editor(div);
+   return aceEditor.getValue();
 }
 function is$Q8compiler8Responseqr2Q6string6resultaQ5Error6errors(v) {
    return true;
