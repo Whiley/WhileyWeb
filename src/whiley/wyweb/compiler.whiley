@@ -18,13 +18,13 @@ public type Request is {
 }
 
 // Response returned from request.
-public type Response is &{
+public type Response is {
     string result,
     ...
 }
 
 // Represents a successful response
-public type Success is &{
+public type Success is {
     string result,
     // Generated JavaScript
     string js,
@@ -32,7 +32,7 @@ public type Success is &{
 }
 
 // Represents an unsuccessful response
-public type Failure is &{
+public type Failure is {
     string result,
     // Resulting errors
     Error[] errors,

@@ -67,9 +67,9 @@ method processCompilationFailure(compiler::Failure response, State state):
     Vector<uint> markers = state->markers    
     Vector<Annotation> annotations = Vector()    
     // Iterate indivdual errors
-    for i in 0..|response->errors|:
+    for i in 0..|response.errors|:
         // Extract ith error
-        compiler::Error error = response->errors[i]
+        compiler::Error error = response.errors[i]
         // Construct gutter annotation
         Annotation ann = session::error(error.text,error.line-1,error.start)
         // Append it
@@ -92,7 +92,7 @@ method processCompilationResponse(string response, State state):
     // Remove all existing markers
     clearAnnotationsAndMarkers(state)
     // Decide what's going on
-    if cr->result == "success":
+    if cr.result == "success":
         // Report success
         msgbox::add(state->msgbox,"success","Compiled successfully!")
     else:

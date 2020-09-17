@@ -106,8 +106,8 @@ function wyweb$main$processCompilationResponse$Q6stringQ5State$V(response, state
    if(Wy.equals(cr.result, Wy.toString("success")))  {
       wyweb$msgbox$add$Q10MessageBoxQ6stringQ6string$V(state.msgbox, "success", "Compiled successfully!");
    } else  {
-      Wy.assert(is$Q8compiler8Responseqr2Q6string6resultaQ5Error6errors(cr));
-      wyweb$main$processCompilationFailure$Q8compiler7FailureQ5State$V(cr, state);
+      Wy.assert(is$Q8compiler8Responser2Q6string6resultaQ5Error6errors(cr));
+      wyweb$main$processCompilationFailure$Q8compiler7FailureQ5State$V(Wy.copy(cr), state);
       wyweb$msgbox$add$Q10MessageBoxQ6stringQ6string$V(state.msgbox, "error", "Compilation failed:");
    }
 }
@@ -212,12 +212,17 @@ function wyweb$msgbox$add$Q10MessageBoxQ6stringQ6string$V(box, clazz, text) {
       };
    }(box, div), 1000);
 }
-function wyweb$nmain$compile_clicked$Q5State$Q5StateaQ6Action(s) {
+const wyweb$nmain$READY$static = 0;
+const wyweb$nmain$COMPILING$static = 1;
+const wyweb$nmain$SUCCESS$static = 2;
+const wyweb$nmain$ERROR$static = 3;
+function wyweb$nmain$compile_clicked$Q10MouseEventQ5State$Q5StateaQ6Action(e, s) {
    let as;
    let sp;
-   return [Wy.copy(s), [web$io$query$Q5queryQ8consumer$Q6Action(wyweb$nmain$get_editor_text$Q3dom6Window$Q6string, wyweb$nmain$compile_ready$Q5StateQ6string$Q5StateaQ6Action)]];
+   s.state = wyweb$nmain$COMPILING$static;
+   return [Wy.copy(s), [web$io$query$Q5queryQ8consumer$Q6Action(wyweb$nmain$get_editor_text$Q3dom6Window$Q6string, wyweb$nmain$compile_begin$Q5StateQ6string$Q5StateaQ6Action)]];
 }
-function wyweb$nmain$compile_ready$Q5StateQ6string$Q5StateaQ6Action(s, text) {
+function wyweb$nmain$compile_begin$Q5StateQ6string$Q5StateaQ6Action(s, text) {
    let as;
    let sp;
    let cr = wyweb$compiler$Request$BBQ6string$Q7Request(false, false, Wy.copy(text));
@@ -227,31 +232,61 @@ function wyweb$nmain$compile_ready$Q5StateQ6string$Q5StateaQ6Action(s, text) {
 function wyweb$nmain$compile_success$Q5StateQ6string$Q5StateaQ6Action(s, response) {
    let as;
    let sp;
-   return [Wy.copy(s), [web$io$alert$Q6string$Q6Action("compilation success")]];
+   let cr = js$JSON$parse(Wy.copy(response));
+   if(Wy.equals(cr.result, Wy.toString("success")))  {
+      s.state = wyweb$nmain$SUCCESS$static;
+   } else  {
+      s.state = wyweb$nmain$ERROR$static;
+   }
+   return [Wy.copy(s), [web$io$timeout$Q4uintQ7handler$Q6Action(1000, wyweb$nmain$compile_ready$Q5State$Q5StateaQ6Action)]];
 }
 function wyweb$nmain$compile_error$Q5State$Q5StateaQ6Action(s) {
    let as;
    let sp;
-   return [Wy.copy(s), [web$io$alert$Q6string$Q6Action("compilation error")]];
+   s.state = wyweb$nmain$ERROR$static;
+   return [Wy.copy(s), [web$io$timeout$Q4uintQ7handler$Q6Action(1000, wyweb$nmain$compile_ready$Q5State$Q5StateaQ6Action)]];
+}
+function wyweb$nmain$compile_ready$Q5State$Q5StateaQ6Action(s) {
+   let as;
+   let sp;
+   s.state = wyweb$nmain$READY$static;
+   return [Wy.copy(s), []];
 }
 function wyweb$nmain$view$Q5State$Q4Node(s) {
    let editor = wyweb$nmain$create_editor$Q5State$Q4Node(Wy.copy(s));
    let toolbar = wyweb$nmain$create_toolbar$Q5State$Q4Node(Wy.copy(s));
-   return web$html$div$aQ4Node$Q4Node([Wy.copy(editor), Wy.copy(toolbar)]);
+   let msgbox = wyweb$nmain$create_msgbox$Q5State$Q4Node(Wy.copy(s));
+   return web$html$div$aQ4Node$Q4Node([Wy.copy(editor), Wy.copy(toolbar), Wy.copy(msgbox)]);
 }
 function wyweb$nmain$create_editor$Q5State$Q4Node(s) {
    return web$html$div$aQ9AttributeQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("code")], "");
 }
+const wyweb$nmain$LOADING$static = web$html$img$aQ9AttributeaQ4Node$Q4Node([new Wy.Record({key: "src", value: "images/loading.gif"})], [""]);
 function wyweb$nmain$create_toolbar$Q5State$Q4Node(s) {
-   let cb = web$html$button$aQ9AttributeQ4Node$Q4Node([web$html$click$Q7handler$Q9Attribute(function() {
-      return function(e, st) {
-         return wyweb$nmain$compile_clicked$Q5State$Q5StateaQ6Action(Wy.copy(st));
-      };
-   }())], "Compile");
+   let cb;
+   if((s.state === wyweb$nmain$READY$static) || ((s.state === wyweb$nmain$SUCCESS$static) || (s.state === wyweb$nmain$ERROR$static)))  {
+      cb = web$html$button$aQ9AttributeQ4Node$Q4Node([web$html$click$Q7handler$Q9Attribute(wyweb$nmain$compile_clicked$Q10MouseEventQ5State$Q5StateaQ6Action)], "Compile");
+   } else  {
+      cb = web$html$button$aQ9AttributeQ4Node$Q4Node([web$html$click$Q7handler$Q9Attribute(wyweb$nmain$compile_clicked$Q10MouseEventQ5State$Q5StateaQ6Action)], Wy.copy(wyweb$nmain$LOADING$static));
+   }
    return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("cmdbar")], [Wy.copy(cb)]);
 }
+function wyweb$nmain$create_msgbox$Q5State$Q4Node(s) {
+   let contents = "";
+   switch(s.state) {
+      case wyweb$nmain$SUCCESS$static: {
+         contents = web$html$div$aQ9AttributeQ4Node$Q4Node([web$html$class$Q6string$Q9Attribute("message success")], "Success!");
+         break;
+      }
+      case wyweb$nmain$ERROR$static: {
+         contents = web$html$div$aQ9AttributeQ4Node$Q4Node([web$html$class$Q6string$Q9Attribute("message error")], "Error!");
+         break;
+      }
+   }
+   return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("messages")], [Wy.copy(contents)]);
+}
 function wyweb$nmain$run(root, window) {
-   let state = new Wy.Record({counter: 0});
+   let state = new Wy.Record({state: wyweb$nmain$READY$static});
    let app = new Wy.Record({model: Wy.copy(state), view: wyweb$nmain$view$Q5State$Q4Node});
    web$app$run(Wy.copy(app), root, window);
    wyweb$nmain$configure_editor$Q3dom6Window$V(window);
@@ -267,6 +302,46 @@ function wyweb$nmain$get_editor_text$Q3dom6Window$Q6string(w) {
    let aceEditor = ace$ace$edit$u2Q6stringQ7Element$Q6Editor(div);
    return aceEditor.getValue();
 }
-function is$Q8compiler8Responseqr2Q6string6resultaQ5Error6errors(v) {
+function is$Q8compiler8Responser2Q6string6resultaQ5Error6errors(v) {
+   if(Object.keys(v).length !== 2)  {
+      return false;
+   } else if(((typeof v.result) === "undefined") || ((typeof v.result) !== "string"))  {
+      return false;
+   } else if(((typeof v.errors) === "undefined") || (!is$aQ5Error(v.errors)))  {
+      return false;
+   }
    return true;
+}
+function is$aQ5Error(v) {
+   if((v !== null) && (v.constructor === Array))  {
+      for(let i = 0;i < v.length;i = i + 1) {
+         if(!is$r5Q6string4textQ4uint5startQ4uint3endQ4uint4lineu2Q6stringN14counterExample(v[i]))  {
+            return false;
+         }
+      }
+      return true;
+   }
+   return false;
+}
+function is$r5Q6string4textQ4uint5startQ4uint3endQ4uint4lineu2Q6stringN14counterExample(v) {
+   if((v === null) || ((v.constructor !== Wy.Record) && (v.constructor !== Object)))  {
+      return false;
+   } else if(((typeof v.text) === "undefined") || ((typeof v.text) !== "string"))  {
+      return false;
+   } else if(((typeof v.start) === "undefined") || (!is$Q4uint(v.start)))  {
+      return false;
+   } else if(((typeof v.end) === "undefined") || (!is$Q4uint(v.end)))  {
+      return false;
+   } else if(((typeof v.line) === "undefined") || (!is$Q4uint(v.line)))  {
+      return false;
+   } else if(((typeof v.counterExample) === "undefined") || (!is$u2Q6stringN(v.counterExample)))  {
+      return false;
+   }
+   return true;
+}
+function is$u2Q6stringN(v) {
+   return ((typeof v) === "string") || (v === null);
+}
+function is$Q4uint(v) {
+   return ((typeof v) === "number") && std$integer$uint$type(v);
 }
