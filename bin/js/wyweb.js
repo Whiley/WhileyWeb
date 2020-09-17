@@ -216,6 +216,38 @@ const wyweb$nmain$READY$static = 0;
 const wyweb$nmain$COMPILING$static = 1;
 const wyweb$nmain$SUCCESS$static = 2;
 const wyweb$nmain$ERROR$static = 3;
+function wyweb$nmain$toggle_verification$Q5State$Q5State(s) {
+   let sp;
+    {
+      const $13 = !s.verification;
+      s.verification = $13;
+   }
+   return Wy.copy(s);
+}
+function wyweb$nmain$toggle_console$Q5State$Q5State(s) {
+   let sp;
+    {
+      const $14 = !s.console;
+      s.console = $14;
+   }
+   return Wy.copy(s);
+}
+function wyweb$nmain$toggle_counterexamples$Q5State$Q5State(s) {
+   let sp;
+    {
+      const $15 = !s.counterexamples;
+      s.counterexamples = $15;
+   }
+   return Wy.copy(s);
+}
+function wyweb$nmain$toggle_javascript$Q5State$Q5State(s) {
+   let sp;
+    {
+      const $16 = !s.javascript;
+      s.javascript = $16;
+   }
+   return Wy.copy(s);
+}
 function wyweb$nmain$compile_clicked$Q10MouseEventQ5State$Q5StateaQ6Action(e, s) {
    let as;
    let sp;
@@ -225,7 +257,7 @@ function wyweb$nmain$compile_clicked$Q10MouseEventQ5State$Q5StateaQ6Action(e, s)
 function wyweb$nmain$compile_begin$Q5StateQ6string$Q5StateaQ6Action(s, text) {
    let as;
    let sp;
-   let cr = wyweb$compiler$Request$BBQ6string$Q7Request(false, false, Wy.copy(text));
+   let cr = wyweb$compiler$Request$BBQ6string$Q7Request(s.verification, s.counterexamples, Wy.copy(text));
    let r = js$JSON$stringify(Wy.copy(cr));
    return [Wy.copy(s), [web$io$post$Q6stringQ6stringQ8consumerQ7handler$Q6Action("/compile", Wy.copy(r), wyweb$nmain$compile_success$Q5StateQ6string$Q5StateaQ6Action, wyweb$nmain$compile_error$Q5State$Q5StateaQ6Action)]];
 }
@@ -234,8 +266,11 @@ function wyweb$nmain$compile_success$Q5StateQ6string$Q5StateaQ6Action(s, respons
    let sp;
    let cr = js$JSON$parse(Wy.copy(response));
    if(Wy.equals(cr.result, Wy.toString("success")))  {
+      Wy.assert(is$Q8compiler8Responser2Q6string6resultQ6string2js(cr));
       s.state = wyweb$nmain$SUCCESS$static;
+      s.binary = Wy.copy(cr.js);
    } else  {
+      Wy.assert(is$Q8compiler8Responser2Q6string6resultaQ5Error6errors(cr));
       s.state = wyweb$nmain$ERROR$static;
    }
    return [Wy.copy(s), [web$io$timeout$Q4uintQ7handler$Q6Action(1000, wyweb$nmain$compile_ready$Q5State$Q5StateaQ6Action)]];
@@ -256,7 +291,9 @@ function wyweb$nmain$view$Q5State$Q4Node(s) {
    let editor = wyweb$nmain$create_editor$Q5State$Q4Node(Wy.copy(s));
    let toolbar = wyweb$nmain$create_toolbar$Q5State$Q4Node(Wy.copy(s));
    let msgbox = wyweb$nmain$create_msgbox$Q5State$Q4Node(Wy.copy(s));
-   return web$html$div$aQ4Node$Q4Node([Wy.copy(editor), Wy.copy(toolbar), Wy.copy(msgbox)]);
+   let console = wyweb$nmain$create_console$Q5State$Q4Node(Wy.copy(s));
+   let js = wyweb$nmain$create_javascript$Q5State$Q4Node(Wy.copy(s));
+   return web$html$div$aQ4Node$Q4Node([Wy.copy(editor), Wy.copy(toolbar), Wy.copy(msgbox), Wy.copy(console), Wy.copy(js)]);
 }
 function wyweb$nmain$create_editor$Q5State$Q4Node(s) {
    return web$html$div$aQ9AttributeQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("code")], "");
@@ -269,7 +306,21 @@ function wyweb$nmain$create_toolbar$Q5State$Q4Node(s) {
    } else  {
       cb = web$html$button$aQ9AttributeQ4Node$Q4Node([web$html$click$Q7handler$Q9Attribute(wyweb$nmain$compile_clicked$Q10MouseEventQ5State$Q5StateaQ6Action)], Wy.copy(wyweb$nmain$LOADING$static));
    }
-   return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("cmdbar")], [Wy.copy(cb)]);
+   let rb = web$html$button$aQ9AttributeQ4Node$Q4Node([web$html$disabled$V$Q9Attribute()], "Run");
+   let vt = wyweb$nmain$toggle$Q6stringQ6Toggle$Q4Node("Verification", wyweb$nmain$toggle_verification$Q5State$Q5State);
+   let ct = wyweb$nmain$toggle$Q6stringQ6Toggle$Q4Node("Console", wyweb$nmain$toggle_console$Q5State$Q5State);
+   let et = wyweb$nmain$toggle$Q6stringQ6Toggle$Q4Node("Counterexamples", wyweb$nmain$toggle_counterexamples$Q5State$Q5State);
+   let jt = wyweb$nmain$toggle$Q6stringQ6Toggle$Q4Node("JavaScript", wyweb$nmain$toggle_javascript$Q5State$Q5State);
+   return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("cmdbar")], [Wy.copy(cb), Wy.copy(rb), Wy.copy(vt), Wy.copy(ct), Wy.copy(et), Wy.copy(jt)]);
+}
+function wyweb$nmain$toggle$Q6stringQ6Toggle$Q4Node(lab, onclick) {
+   let t = web$html$input$aQ9AttributeaQ4Node$Q4Node([new Wy.Record({key: "type", value: "checkbox"}), web$html$click$Q7handler$Q9Attribute(function(onclick) {
+      return function(e, s) {
+         return [onclick(Wy.copy(s)), []];
+      };
+   }(onclick))], [""]);
+   let l = web$html$label$Q4Node$Q4Node(Wy.copy(lab));
+   return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$style$Q6string$Q9Attribute("display: inline;")], [Wy.copy(t), Wy.copy(l)]);
 }
 function wyweb$nmain$create_msgbox$Q5State$Q4Node(s) {
    let contents = "";
@@ -285,8 +336,22 @@ function wyweb$nmain$create_msgbox$Q5State$Q4Node(s) {
    }
    return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("messages")], [Wy.copy(contents)]);
 }
+function wyweb$nmain$create_console$Q5State$Q4Node(s) {
+   if(s.console)  {
+      return web$html$div$aQ9AttributeQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("console")], Wy.copy(s.output));
+   } else  {
+      return web$html$div$Q4Node$Q4Node("");
+   }
+}
+function wyweb$nmain$create_javascript$Q5State$Q4Node(s) {
+   if(s.javascript)  {
+      return web$html$div$aQ9AttributeQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("bin")], Wy.copy(s.binary));
+   } else  {
+      return web$html$div$Q4Node$Q4Node("");
+   }
+}
 function wyweb$nmain$run(root, window) {
-   let state = new Wy.Record({state: wyweb$nmain$READY$static});
+   let state = new Wy.Record({state: wyweb$nmain$READY$static, verification: false, console: false, counterexamples: false, javascript: false, binary: "binary", output: "output"});
    let app = new Wy.Record({model: Wy.copy(state), view: wyweb$nmain$view$Q5State$Q4Node});
    web$app$run(Wy.copy(app), root, window);
    wyweb$nmain$configure_editor$Q3dom6Window$V(window);
@@ -308,6 +373,16 @@ function is$Q8compiler8Responser2Q6string6resultaQ5Error6errors(v) {
    } else if(((typeof v.result) === "undefined") || ((typeof v.result) !== "string"))  {
       return false;
    } else if(((typeof v.errors) === "undefined") || (!is$aQ5Error(v.errors)))  {
+      return false;
+   }
+   return true;
+}
+function is$Q8compiler8Responser2Q6string6resultQ6string2js(v) {
+   if(Object.keys(v).length !== 2)  {
+      return false;
+   } else if(((typeof v.result) === "undefined") || ((typeof v.result) !== "string"))  {
+      return false;
+   } else if(((typeof v.js) === "undefined") || ((typeof v.js) !== "string"))  {
       return false;
    }
    return true;
