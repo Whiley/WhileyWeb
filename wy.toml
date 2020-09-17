@@ -10,6 +10,6 @@ platforms=["whiley","js"]
 source="src/whiley"
 
 [dependencies]
-dom="0.2.0"
+dom="0.2.1"
 web="0.3.1"
 ace="0.2.0"

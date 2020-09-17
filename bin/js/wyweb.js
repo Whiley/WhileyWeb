@@ -213,9 +213,10 @@ function wyweb$msgbox$add$Q10MessageBoxQ6stringQ6string$V(box, clazz, text) {
    }(box, div), 1000);
 }
 const wyweb$nmain$READY$static = 0;
-const wyweb$nmain$COMPILING$static = 1;
-const wyweb$nmain$SUCCESS$static = 2;
-const wyweb$nmain$ERROR$static = 3;
+const wyweb$nmain$READY_RUN$static = 1;
+const wyweb$nmain$COMPILING$static = 2;
+const wyweb$nmain$SUCCESS$static = 3;
+const wyweb$nmain$ERROR$static = 4;
 function wyweb$nmain$toggle_verification$Q10MouseEventQ5State$Q5StateaQ6Action(e, s) {
    let as;
    let sp;
@@ -273,17 +274,24 @@ function wyweb$nmain$compile_success$Q5StateQ6string$Q5StateaQ6Action(s, respons
       Wy.assert(is$Q8compiler8Responser2Q6string6resultQ6string2js(cr));
       s.state = wyweb$nmain$SUCCESS$static;
       s.binary = Wy.copy(cr.js);
+      return [Wy.copy(s), [web$io$timeout$Q4uintQ7handler$Q6Action(1000, wyweb$nmain$compile_readyrun$Q5State$Q5StateaQ6Action)]];
    } else  {
       Wy.assert(is$Q8compiler8Responser2Q6string6resultaQ5Error6errors(cr));
       s.state = wyweb$nmain$ERROR$static;
+      return [Wy.copy(s), [web$io$timeout$Q4uintQ7handler$Q6Action(1000, wyweb$nmain$compile_ready$Q5State$Q5StateaQ6Action)]];
    }
-   return [Wy.copy(s), [web$io$timeout$Q4uintQ7handler$Q6Action(1000, wyweb$nmain$compile_ready$Q5State$Q5StateaQ6Action)]];
 }
 function wyweb$nmain$compile_error$Q5State$Q5StateaQ6Action(s) {
    let as;
    let sp;
    s.state = wyweb$nmain$ERROR$static;
    return [Wy.copy(s), [web$io$timeout$Q4uintQ7handler$Q6Action(1000, wyweb$nmain$compile_ready$Q5State$Q5StateaQ6Action)]];
+}
+function wyweb$nmain$compile_readyrun$Q5State$Q5StateaQ6Action(s) {
+   let as;
+   let sp;
+   s.state = wyweb$nmain$READY_RUN$static;
+   return [Wy.copy(s), []];
 }
 function wyweb$nmain$compile_ready$Q5State$Q5StateaQ6Action(s) {
    let as;
@@ -304,18 +312,34 @@ function wyweb$nmain$create_editor$Q5State$Q4Node(s) {
 }
 const wyweb$nmain$LOADING$static = web$html$img$aQ9AttributeaQ4Node$Q4Node([new Wy.Record({key: "src", value: "images/loading.gif"})], [""]);
 function wyweb$nmain$create_toolbar$Q5State$Q4Node(s) {
+   let l;
    let cb;
-   if((s.state === wyweb$nmain$READY$static) || ((s.state === wyweb$nmain$SUCCESS$static) || (s.state === wyweb$nmain$ERROR$static)))  {
-      cb = web$html$button$aQ9AttributeQ4Node$Q4Node([web$html$click$Q7handler$Q9Attribute(wyweb$nmain$compile_clicked$Q10MouseEventQ5State$Q5StateaQ6Action)], "Compile");
-   } else  {
-      cb = web$html$button$aQ9AttributeQ4Node$Q4Node([web$html$click$Q7handler$Q9Attribute(wyweb$nmain$compile_clicked$Q10MouseEventQ5State$Q5StateaQ6Action)], Wy.copy(wyweb$nmain$LOADING$static));
+   switch(s.state) {
+      case wyweb$nmain$READY$static:
+      case wyweb$nmain$READY_RUN$static:
+      case wyweb$nmain$SUCCESS$static:
+      case wyweb$nmain$ERROR$static: {
+         cb = web$html$button$aQ9AttributeQ4Node$Q4Node([web$html$click$Q7handler$Q9Attribute(wyweb$nmain$compile_clicked$Q10MouseEventQ5State$Q5StateaQ6Action)], "Compile");
+         l = web$html$div$Q4Node$Q4Node("");
+         break;
+      }
+      default: {
+         cb = web$html$button$aQ9AttributeQ4Node$Q4Node([web$html$click$Q7handler$Q9Attribute(wyweb$nmain$compile_clicked$Q10MouseEventQ5State$Q5StateaQ6Action), web$html$disabled$V$Q9Attribute()], "Compile");
+         l = Wy.copy(wyweb$nmain$LOADING$static);
+         break;
+      }
    }
-   let rb = web$html$button$aQ9AttributeQ4Node$Q4Node([web$html$disabled$V$Q9Attribute()], "Run");
+   let rb;
+   if(s.state === wyweb$nmain$READY_RUN$static)  {
+      rb = web$html$button$Q4Node$Q4Node("Run");
+   } else  {
+      rb = web$html$button$aQ9AttributeQ4Node$Q4Node([web$html$disabled$V$Q9Attribute()], "Run");
+   }
    let vt = wyweb$nmain$toggle$Q6stringQ6Toggle$Q4Node("Verification", wyweb$nmain$toggle_verification$Q10MouseEventQ5State$Q5StateaQ6Action);
    let ct = wyweb$nmain$toggle$Q6stringQ6Toggle$Q4Node("Console", wyweb$nmain$toggle_console$Q10MouseEventQ5State$Q5StateaQ6Action);
    let et = wyweb$nmain$toggle$Q6stringQ6Toggle$Q4Node("Counterexamples", wyweb$nmain$toggle_counterexamples$Q10MouseEventQ5State$Q5StateaQ6Action);
    let jt = wyweb$nmain$toggle$Q6stringQ6Toggle$Q4Node("JavaScript", wyweb$nmain$toggle_javascript$Q10MouseEventQ5State$Q5StateaQ6Action);
-   return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("cmdbar")], [Wy.copy(cb), Wy.copy(rb), Wy.copy(vt), Wy.copy(ct), Wy.copy(et), Wy.copy(jt)]);
+   return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("cmdbar")], [Wy.copy(cb), Wy.copy(rb), Wy.copy(vt), Wy.copy(ct), Wy.copy(et), Wy.copy(jt), Wy.copy(l)]);
 }
 function wyweb$nmain$toggle$Q6stringQ6Toggle$Q4Node(lab, onclick) {
    let t = web$html$input$aQ9AttributeaQ4Node$Q4Node([new Wy.Record({key: "type", value: "checkbox"}), web$html$click$Q7handler$Q9Attribute(onclick)], [""]);
