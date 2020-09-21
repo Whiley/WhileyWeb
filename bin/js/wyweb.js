@@ -1,12 +1,4 @@
 'use strict';
-function main$view$Q5State$Q4Node(s) {
-   let b = web$html$button$aQ9AttributeQ4Node$Q4Node([], "OK");
-   return web$html$div$aQ4Node$Q4Node([Wy.copy(b), "Hello World"]);
-}
-function main$main() {
-   let state = new Wy.Record({counter: 0});
-   return new Wy.Record({model: Wy.copy(state), view: main$view$Q5State$Q4Node});
-}
 function wyweb$compiler$Request$BBQ6string$Q7Request(verify, counterexamples, code) {
    return new Wy.Record({code: Wy.copy(code), verify: verify, counterexamples: counterexamples, quickcheck: false, dependencies: []});
 }
@@ -274,12 +266,30 @@ function wyweb$nmain$compile_success$Q5StateQ6string$Q5StateaQ6Action(s, respons
       Wy.assert(is$Q8compiler8Responser2Q6string6resultQ6string2js(cr));
       s.state = wyweb$nmain$SUCCESS$static;
       s.binary = Wy.copy(cr.js);
-      return [Wy.copy(s), [web$io$timeout$Q4uintQ7handler$Q6Action(1000, wyweb$nmain$compile_readyrun$Q5State$Q5StateaQ6Action)]];
+      return [Wy.copy(s), [web$io$call$mQ3dom6WindowV$Q6Action(function(s) {
+         return function(w) {
+            return wyweb$nmain$clear_editor_markers$Q3dom6WindowaQ4uint$V(w, Wy.copy(s.markers));
+         };
+      }(s)), web$io$timeout$Q4uintQ7handler$Q6Action(1000, wyweb$nmain$compile_readyrun$Q5State$Q5StateaQ6Action)]];
    } else  {
       Wy.assert(is$Q8compiler8Responser2Q6string6resultaQ5Error6errors(cr));
       s.state = wyweb$nmain$ERROR$static;
-      return [Wy.copy(s), [web$io$timeout$Q4uintQ7handler$Q6Action(1000, wyweb$nmain$compile_ready$Q5State$Q5StateaQ6Action)]];
+      return [Wy.copy(s), [web$io$call$mQ3dom6WindowV$Q6Action(function(s) {
+         return function(w) {
+            return wyweb$nmain$clear_editor_markers$Q3dom6WindowaQ4uint$V(w, Wy.copy(s.markers));
+         };
+      }(s)), web$io$query$Q5queryQ8consumer$Q6Action(function(cr) {
+         return function(w) {
+            return wyweb$nmain$set_editor_markers$Q3dom6WindowaQ8compiler5Error$aQ4uint(w, Wy.copy(cr.errors));
+         };
+      }(cr), wyweb$nmain$compile_failure$Q5StateaQ4uint$Q5StateaQ6Action), web$io$timeout$Q4uintQ7handler$Q6Action(1000, wyweb$nmain$compile_ready$Q5State$Q5StateaQ6Action)]];
    }
+}
+function wyweb$nmain$compile_failure$Q5StateaQ4uint$Q5StateaQ6Action(s, markers) {
+   let as;
+   let sp;
+   s.markers = Wy.copy(markers);
+   return [Wy.copy(s), []];
 }
 function wyweb$nmain$compile_error$Q5State$Q5StateaQ6Action(s) {
    let as;
@@ -375,7 +385,7 @@ function wyweb$nmain$create_javascript$Q5State$Q4Node(s) {
    }
 }
 function wyweb$nmain$run(root, window) {
-   let state = new Wy.Record({state: wyweb$nmain$READY$static, verification: false, console: false, counterexamples: false, javascript: false, binary: "binary", output: "output"});
+   let state = new Wy.Record({state: wyweb$nmain$READY$static, verification: false, console: false, counterexamples: false, javascript: false, binary: "binary", output: "output", markers: []});
    let app = new Wy.Record({model: Wy.copy(state), view: wyweb$nmain$view$Q5State$Q4Node});
    web$app$run(Wy.copy(app), root, window);
    wyweb$nmain$configure_editor$Q3dom6Window$V(window);
@@ -390,6 +400,34 @@ function wyweb$nmain$get_editor_text$Q3dom6Window$Q6string(w) {
    let div = w.document.getElementById("code");
    let aceEditor = ace$ace$edit$u2Q6stringQ7Element$Q6Editor(div);
    return aceEditor.getValue();
+}
+function wyweb$nmain$clear_editor_markers$Q3dom6WindowaQ4uint$V(w, markers) {
+   let div = w.document.getElementById("code");
+   let editor = ace$ace$edit$u2Q6stringQ7Element$Q6Editor(div);
+   let session = editor.getSession();
+   session.clearAnnotations();
+   for(let i = 0;i < markers.length;i = i + 1) {
+      session.removeMarker(markers[i]);
+   }
+}
+function wyweb$nmain$set_editor_markers$Q3dom6WindowaQ8compiler5Error$aQ4uint(w, errors) {
+   let div = w.document.getElementById("code");
+   let editor = ace$ace$edit$u2Q6stringQ7Element$Q6Editor(div);
+   let session = editor.getSession();
+   let markers = Wy.array(0, errors.length);
+   let annotations = std$collections$vector$Vector$V$Q6Vector();
+   for(let i = 0;i < errors.length;i = i + 1) {
+      let error = Wy.copy(errors[i]);
+      let ann = ace$session$error$Q6stringQ4uintQ4uint$Q10Annotation(Wy.copy(error.text), error.line - 1, error.start);
+       {
+         const $17 = std$collections$vector$push$Q6Vectorv1T$Q6Vector(Wy.copy(annotations), Wy.copy(ann));
+         annotations = $17;
+      }
+      let range = ace$range$Range$IIII$Q5Range(error.line - 1, error.start, error.line - 1, error.end + 1);
+      markers[i] = session.addMarker(Wy.copy(range), "error-message", "error", true);
+   }
+   session.setAnnotations(std$collections$vector$to_array$Q6Vector$av1T(Wy.copy(annotations)));
+   return Wy.copy(markers);
 }
 function is$Q8compiler8Responser2Q6string6resultaQ5Error6errors(v) {
    if(Object.keys(v).length !== 2)  {

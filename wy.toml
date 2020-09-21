@@ -11,5 +11,5 @@ source="src/whiley"
 
 [dependencies]
 dom="0.2.1"
-web="0.3.1"
+web="0.3.2"
 ace="0.2.0"
