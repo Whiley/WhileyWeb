@@ -19,7 +19,7 @@ public class FrontPage extends HtmlPage {
 	public void writeBodyContent(PrintStream writer, Map<String,String> parameters) {
 		writer.println("<div id='root'></div>");
 		writer.println("<script>");
-		writer.println("window.onload = function() { wyweb$nmain$run(document.getElementById('root'),window); };");
+		writer.println("window.onload = function() { wyweb$main$run(document.getElementById('root'),window); };");
 		writer.println("</script>");
 	}
 }
