@@ -1,6 +1,6 @@
 'use strict';
-function wyweb$compiler$Request$BBQ6string$Q7Request(verify, counterexamples, code) {
-   return new Wy.Record({code: Wy.copy(code), verify: verify, counterexamples: counterexamples, quickcheck: false, dependencies: []});
+function wyweb$compiler$Request$BBBQ6string$Q7Request(verify, check, counterexamples, code) {
+   return new Wy.Record({code: Wy.copy(code), verify: verify, counterexamples: counterexamples, quickcheck: check, dependencies: []});
 }
 const wyweb$main$READY$static = 0;
 const wyweb$main$READY_RUN$static = 1;
@@ -16,12 +16,21 @@ function wyweb$main$toggle_verification$Q10MouseEventQ5State$Q5StateaQ6Action(e,
    }
    return [Wy.copy(s), []];
 }
+function wyweb$main$toggle_check$Q10MouseEventQ5State$Q5StateaQ6Action(e, s) {
+   let as;
+   let sp;
+    {
+      const $1 = !s.check;
+      s.check = $1;
+   }
+   return [Wy.copy(s), []];
+}
 function wyweb$main$toggle_console$Q10MouseEventQ5State$Q5StateaQ6Action(e, s) {
    let as;
    let sp;
     {
-      const $1 = !s.console;
-      s.console = $1;
+      const $2 = !s.console;
+      s.console = $2;
    }
    return [Wy.copy(s), []];
 }
@@ -29,8 +38,8 @@ function wyweb$main$toggle_counterexamples$Q10MouseEventQ5State$Q5StateaQ6Action
    let as;
    let sp;
     {
-      const $2 = !s.counterexamples;
-      s.counterexamples = $2;
+      const $3 = !s.counterexamples;
+      s.counterexamples = $3;
    }
    return [Wy.copy(s), []];
 }
@@ -38,8 +47,8 @@ function wyweb$main$toggle_javascript$Q10MouseEventQ5State$Q5StateaQ6Action(e, s
    let as;
    let sp;
     {
-      const $3 = !s.javascript;
-      s.javascript = $3;
+      const $4 = !s.javascript;
+      s.javascript = $4;
    }
    return [Wy.copy(s), []];
 }
@@ -52,7 +61,7 @@ function wyweb$main$compile_clicked$Q10MouseEventQ5State$Q5StateaQ6Action(e, s) 
 function wyweb$main$compile_begin$Q5StateQ6string$Q5StateaQ6Action(s, text) {
    let as;
    let sp;
-   let cr = wyweb$compiler$Request$BBQ6string$Q7Request(s.verification, s.counterexamples, Wy.copy(text));
+   let cr = wyweb$compiler$Request$BBBQ6string$Q7Request(s.verification, s.check, s.counterexamples, Wy.copy(text));
    let r = js$JSON$stringify(Wy.copy(cr));
    return [Wy.copy(s), [web$io$post$Q6stringQ6stringQ8consumerQ7handler$Q6Action("/compile", Wy.copy(r), wyweb$main$compile_success$Q5StateQ6string$Q5StateaQ6Action, wyweb$main$compile_error$Q5State$Q5StateaQ6Action)]];
 }
@@ -144,10 +153,11 @@ function wyweb$main$create_toolbar$Q5State$Q4Node(s) {
       rb = web$html$button$aQ9AttributeQ4Node$Q4Node([web$html$disabled$V$Q9Attribute()], "Run");
    }
    let vt = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("Verification", wyweb$main$toggle_verification$Q10MouseEventQ5State$Q5StateaQ6Action);
+   let qt = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("Check", wyweb$main$toggle_check$Q10MouseEventQ5State$Q5StateaQ6Action);
    let ct = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("Console", wyweb$main$toggle_console$Q10MouseEventQ5State$Q5StateaQ6Action);
    let et = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("Counterexamples", wyweb$main$toggle_counterexamples$Q10MouseEventQ5State$Q5StateaQ6Action);
    let jt = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("JavaScript", wyweb$main$toggle_javascript$Q10MouseEventQ5State$Q5StateaQ6Action);
-   return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("cmdbar")], [Wy.copy(cb), Wy.copy(rb), Wy.copy(vt), Wy.copy(ct), Wy.copy(et), Wy.copy(jt), Wy.copy(l)]);
+   return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("cmdbar")], [Wy.copy(cb), Wy.copy(rb), Wy.copy(vt), Wy.copy(qt), Wy.copy(ct), Wy.copy(et), Wy.copy(jt), Wy.copy(l)]);
 }
 function wyweb$main$toggle$Q6stringQ6Toggle$Q4Node(lab, onclick) {
    let t = web$html$input$aQ9AttributeaQ4Node$Q4Node([new Wy.Record({key: "type", value: "checkbox"}), web$html$click$Q7handler$Q9Attribute(onclick)], [""]);
@@ -183,7 +193,7 @@ function wyweb$main$create_javascript$Q5State$Q4Node(s) {
    }
 }
 function wyweb$main$run(root, window) {
-   let state = new Wy.Record({state: wyweb$main$READY$static, verification: false, console: false, counterexamples: false, javascript: false, binary: "binary", output: "output", markers: []});
+   let state = new Wy.Record({state: wyweb$main$READY$static, verification: false, check: false, console: false, counterexamples: false, javascript: false, binary: "binary", output: "output", markers: []});
    let app = new Wy.Record({model: Wy.copy(state), view: wyweb$main$view$Q5State$Q4Node});
    web$app$run(Wy.copy(app), root, window);
    wyweb$main$configure_editor$Q3dom6Window$V(window);
@@ -218,8 +228,8 @@ function wyweb$main$set_editor_markers$Q3dom6WindowaQ8compiler5Error$aQ4uint(w, 
       let error = Wy.copy(errors[i]);
       let ann = ace$session$error$Q6stringQ4uintQ4uint$Q10Annotation(Wy.copy(error.text), error.line - 1, error.start);
        {
-         const $4 = std$collections$vector$push$Q6Vectorv1T$Q6Vector(Wy.copy(annotations), Wy.copy(ann));
-         annotations = $4;
+         const $5 = std$collections$vector$push$Q6Vectorv1T$Q6Vector(Wy.copy(annotations), Wy.copy(ann));
+         annotations = $5;
       }
       let range = ace$range$Range$IIII$Q5Range(error.line - 1, error.start, error.line - 1, error.end + 1);
       markers[i] = session.addMarker(Wy.copy(range), "error-message", "error", true);

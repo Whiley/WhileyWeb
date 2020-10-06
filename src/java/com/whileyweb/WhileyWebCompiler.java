@@ -173,8 +173,8 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 			// Perform quickcheck testing!
 			if(ok && quickcheck) {
 				QuickCheck.Context context = QuickCheck.DEFAULT_CONTEXT;
-//				ok = new QuickCheck(project, null, System.out, System.err).check(binary, context);
-				throw new RuntimeException("Implement me!");
+				ok = new QuickCheck(environment, System.out, System.err).check(project, binary, context,
+						Collections.EMPTY_LIST);
 			}
 			// Flush everything to disk
 			root.flush();

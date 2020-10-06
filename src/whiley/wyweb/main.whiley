@@ -36,6 +36,7 @@ public type State is {
     string output,
     string binary,
     bool verification,
+    bool check,
     bool console,
     bool counterexamples,
     bool javascript,
@@ -44,6 +45,10 @@ public type State is {
 
 function toggle_verification(MouseEvent e, State s) -> (State sp, Action[] as):
     s.verification = !s.verification
+    return s,[]
+
+function toggle_check(MouseEvent e, State s) -> (State sp, Action[] as):
+    s.check = !s.check
     return s,[]
 
 function toggle_console(MouseEvent e, State s) -> (State sp, Action[] as):
@@ -74,7 +79,7 @@ function compile_clicked(MouseEvent e, State s) -> (State sp, Action[] as):
  */
 function compile_begin(State s, string text) ->  (State sp, Action[] as):
     // Construct appropriate request
-    compiler::Request cr = compiler::Request(s.verification,s.counterexamples,text)
+    compiler::Request cr = compiler::Request(s.verification,s.check,s.counterexamples,text)
     // Turn into JSON string
     string r = JSON::stringify(cr)
     // Post request
@@ -177,11 +182,12 @@ function create_toolbar(State s) -> Node:
         rb = button([disabled()],"Run")        
     // Construct toggles
     Node vt = toggle("Verification", &toggle_verification)
+    Node qt = toggle("Check", &toggle_check)
     Node ct = toggle("Console", &toggle_console)
     Node et = toggle("Counterexamples", &toggle_counterexamples)
     Node jt = toggle("JavaScript", &toggle_javascript)
     //
-    return div([id("cmdbar")],[cb,rb,vt,ct,et,jt,l])
+    return div([id("cmdbar")],[cb,rb,vt,qt,ct,et,jt,l])
 
 function toggle(string lab, Toggle onclick) -> Node:
     Node t = input([{key:"type",value:"checkbox"},click(onclick)],[""])
@@ -230,6 +236,7 @@ public export method run(dom::Node root, dom::Window window):
     State state = {
         state: READY,
         verification: false,
+        check: false,
         console: false,
         counterexamples: false,
         javascript: false,
