@@ -203,6 +203,11 @@ function wyweb$main$configure_editor$Q3dom6Window$V(w) {
    let aceEditor = ace$ace$edit$u2Q6stringQ7Element$Q6Editor(div);
    aceEditor.setTheme("ace/theme/eclipse");
    aceEditor.getSession().setMode("ace/mode/whiley");
+   div.addEventListener("mouseup", function(aceEditor) {
+      return function(e) {
+         return aceEditor.resize(true);
+      };
+   }(aceEditor));
 }
 function wyweb$main$get_editor_text$Q3dom6Window$Q6string(w) {
    let div = w.document.getElementById("code");

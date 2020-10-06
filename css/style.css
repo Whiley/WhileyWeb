@@ -154,6 +154,10 @@ nav.menubar > ul > li > ul a {
     margin-top: 0.5em;
 }
 
+#cmdbar * {
+    margin: 0 0.25em 0 0;
+}
+
 #configbar {
     display: inline-block;
     font-size: 10pt;

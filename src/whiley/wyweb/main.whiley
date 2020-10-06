@@ -267,6 +267,9 @@ public method configure_editor(dom::Window w):
     // Configure editor
     aceEditor->setTheme("ace/theme/eclipse")
     aceEditor->getSession()->setMode("ace/mode/whiley")
+    // Add event listener for resize events.  This is necessary so
+    // that ACE editor knows when to resize itself.
+    div->addEventListener("mouseup", &(dom::MouseEvent e -> aceEditor->resize(true)))
     // Done
 
 /**
