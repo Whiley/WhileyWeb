@@ -7,7 +7,12 @@ import std::collections::vector with Vector
 import js::core with string
 import js::JSON
 import w3c::dom
-import web::html with button,class,click,disabled,div,id,img,input,label,MouseEvent,style,tYpe
+// Import elements
+import button,div,img,input,label,option,select from web::html
+// Import attributes
+import class,click,change,disabled,id,style,tYpe from web::html
+// Import events
+import MouseEvent from web::html
 import web::io
 
 import ace::ace
@@ -17,13 +22,24 @@ import ace::range with Range
 
 import wyweb::compiler
 
-type Node is html::Node<State>
-type Action is io::Action<State>
+type Node is web::html::Node<State>
+type Action is web::io::Action<State>
 type Toggle is function(MouseEvent,State)->(State,Action[])
 
 // =========================================
 // Model
 // =========================================
+
+final string[] EG_NAMES = ["Hello World","Absolute","IndexOf"]
+
+final string[] EG_TEXT = [
+    // Hello World
+    "import std::io\nimport std::ascii\n\nmethod main():\n    io::println(\"hello world\")",
+    // Absolute Function
+    "function abs(int x) -> (int r)\nensures r >= 0\nensures (r == x) || (r == -x):\n    //\n    if x >= 0:\n        return x\n    else:\n        return -x",
+    // IndexOf Function
+    "type nat is (int x) where x >= 0\n\nfunction indexOf(int[] items, int item) -> (int r)\n// If valid index returned, element matches item\nensures r >= 0 ==> items[r] == item\n// If invalid index return, no element matches item\nensures r <  0 ==> all { i in 0..|items| | items[i] != item }\n// Return value is between -1 and size of items\nensures r >= -1 && r < |items|:\n    //\n    nat i = 0\n    while i < |items|\n        where all { k in 0 .. i | items[k] != item }:\n        //    \n        if items[i] == item:\n            return i\n        i = i + 1\n    //\n    return -1"
+    ]
 
 final uint READY = 0
 final uint READY_RUN = 1
@@ -62,6 +78,9 @@ function toggle_counterexamples(MouseEvent e, State s) -> (State sp, Action[] as
 function toggle_javascript(MouseEvent e, State s) -> (State sp, Action[] as):
     s.javascript = !s.javascript
     return s,[]
+
+function load_example(MouseEvent e, State s) -> (State sp, Action[] as):
+    return s,[io::call(&(dom::Window w -> set_editor_text(w)))]
 
 /**
  * The compile button has been clicked.  The next step is to extract
@@ -186,14 +205,24 @@ function create_toolbar(State s) -> Node:
     Node ct = toggle("Console", &toggle_console)
     Node et = toggle("Counterexamples", &toggle_counterexamples)
     Node jt = toggle("JavaScript", &toggle_javascript)
+    Node cf = div([id("configbar")],[vt,qt,ct,et,jt])
+    Node egs = create_examples(EG_NAMES,&load_example)
     //
-    return div([id("cmdbar")],[cb,rb,vt,qt,ct,et,jt,l])
+    return div([id("cmdbar")],[cb,rb,cf,l,egs])
 
 function toggle(string lab, Toggle onclick) -> Node:
     Node t = input([{key:"type",value:"checkbox"},click(onclick)],[""])
     Node l = label(lab)
     // Done
     return div([style("display: inline;")],[t,l])
+
+function create_examples(string[] labels, Toggle onchange) -> Node:
+    Node[] children = ["";|labels|]
+    // Setup labels
+    for i in 0..|labels|:
+        children[i] = option(labels[i])
+    // Done
+    return div([id("egbar")],["Examples: ",select([id("egselect"),change(onchange)],children)])
 
 /**
  * The msgbox reports results back from compilation
@@ -282,6 +311,30 @@ public method get_editor_text(dom::Window w) -> string:
     Editor aceEditor = ace::edit(div)
     // Extract current text
     return aceEditor->getValue()
+
+/**
+ * Set the current text stored in the ACE Editor.
+ */
+public method set_editor_text(dom::Window w):
+    // Determine example to load
+    dom::Node sel = w->document->getElementById("egselect")
+    // Following is a hack.  Basicaly pretend its a text area so have
+    // access to value field.
+    assert sel is dom::TextArea
+    // Extract label
+    string label = sel->value
+    string text = ""
+    //
+    for i in 0..|EG_NAMES|:
+        if label == EG_NAMES[i]:
+            text = EG_TEXT[i]
+            break
+    // Find code div
+    dom::Element div = w->document->getElementById("code")
+    // Extract editor instance from div
+    Editor aceEditor = ace::edit(div)
+    // Set current text
+    aceEditor->setValue(text,0)
 
 /**
  * Clear existing markers using the saved identifiers from before.

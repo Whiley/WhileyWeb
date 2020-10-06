@@ -149,9 +149,11 @@ nav.menubar > ul > li > ul a {
 }
 
 #cmdbar {
-    display: inline-block;
-    vertical-align: middle;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
     margin-top: 0.5em;
+    font-size: 14pt;
 }
 
 #cmdbar * {
@@ -159,35 +161,17 @@ nav.menubar > ul > li > ul a {
 }
 
 #configbar {
-    display: inline-block;
-    font-size: 10pt;
-    vertical-align: middle;
+    flex-grow: 1;
 }
 
 #egbar {
-    float: right;
     font-weight: bold;    
     margin-top: 0.5em;
-    font-size: 10pt;
-}
-
-#depbar {
-    display: inline-block;    
-    font-size: 10pt;
     vertical-align: middle;
-    margin: 0.5em 0.5em 0.5em 0.5em;
-    padding: 0.5em;
-    width: 25%;
-    border: 1px solid #ddd;
-}
-
-#deplist {
-    font-size: 8pt;
-    vertical-align: middle;
+    font-size: 16pt;
 }
 
 #cmdbar button {
-    font-size: 12pt;
     background-color: #e5d3a7;
     border-radius: 12px;
     border: none;
@@ -195,7 +179,7 @@ nav.menubar > ul > li > ul a {
     padding: 15px 32px;
     text-align: center;
     text-decoration: none;
-    display: inline-block;
+    font-size: 16pt;
 }
 
 #cmdbar button:active {
@@ -231,23 +215,4 @@ nav.menubar > ul > li > ul a {
     text-decoration: none;
     border-bottom: 2px goldenrod dotted;
     position: absolute;
-}
-
-/*
- * Resize handle for code area.
- */
-.ui-resizable-handle {
-	position: absolute;
-	font-size: 0.1px;
-	display: block;
-}
-.ui-resizable-s {
-	cursor: row-resize;
-	height: 16px;
-	width: 16px;
-	bottom: 0;
-	right: 0;
-	background: url("../images/resizable.png");
-	background-repeat: no-repeat;
-	background-size: 80%;
 }

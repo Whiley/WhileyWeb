@@ -2,6 +2,8 @@
 function wyweb$compiler$Request$BBBQ6string$Q7Request(verify, check, counterexamples, code) {
    return new Wy.Record({code: Wy.copy(code), verify: verify, counterexamples: counterexamples, quickcheck: check, dependencies: []});
 }
+const wyweb$main$EG_NAMES$static = ["Hello World", "Absolute", "IndexOf"];
+const wyweb$main$EG_TEXT$static = ["import std::io\nimport std::ascii\n\nmethod main():\n    io::println(\"hello world\")", "function abs(int x) -> (int r)\nensures r >= 0\nensures (r == x) || (r == -x):\n    //\n    if x >= 0:\n        return x\n    else:\n        return -x", "type nat is (int x) where x >= 0\n\nfunction indexOf(int[] items, int item) -> (int r)\n// If valid index returned, element matches item\nensures r >= 0 ==> items[r] == item\n// If invalid index return, no element matches item\nensures r <  0 ==> all { i in 0..|items| | items[i] != item }\n// Return value is between -1 and size of items\nensures r >= -1 && r < |items|:\n    //\n    nat i = 0\n    while i < |items|\n        where all { k in 0 .. i | items[k] != item }:\n        //    \n        if items[i] == item:\n            return i\n        i = i + 1\n    //\n    return -1"];
 const wyweb$main$READY$static = 0;
 const wyweb$main$READY_RUN$static = 1;
 const wyweb$main$COMPILING$static = 2;
@@ -51,6 +53,15 @@ function wyweb$main$toggle_javascript$Q10MouseEventQ5State$Q5StateaQ6Action(e, s
       s.javascript = $4;
    }
    return [Wy.copy(s), []];
+}
+function wyweb$main$load_example$Q10MouseEventQ5State$Q5StateaQ6Action(e, s) {
+   let as;
+   let sp;
+   return [Wy.copy(s), [web$io$call$mQ3dom6WindowV$Q6Action(function() {
+      return function(w) {
+         return wyweb$main$set_editor_text$Q3dom6Window$V(w);
+      };
+   }())]];
 }
 function wyweb$main$compile_clicked$Q10MouseEventQ5State$Q5StateaQ6Action(e, s) {
    let as;
@@ -157,12 +168,21 @@ function wyweb$main$create_toolbar$Q5State$Q4Node(s) {
    let ct = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("Console", wyweb$main$toggle_console$Q10MouseEventQ5State$Q5StateaQ6Action);
    let et = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("Counterexamples", wyweb$main$toggle_counterexamples$Q10MouseEventQ5State$Q5StateaQ6Action);
    let jt = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("JavaScript", wyweb$main$toggle_javascript$Q10MouseEventQ5State$Q5StateaQ6Action);
-   return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("cmdbar")], [Wy.copy(cb), Wy.copy(rb), Wy.copy(vt), Wy.copy(qt), Wy.copy(ct), Wy.copy(et), Wy.copy(jt), Wy.copy(l)]);
+   let cf = web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("configbar")], [Wy.copy(vt), Wy.copy(qt), Wy.copy(ct), Wy.copy(et), Wy.copy(jt)]);
+   let egs = wyweb$main$create_examples$aQ6stringQ6Toggle$Q4Node(Wy.copy(wyweb$main$EG_NAMES$static), wyweb$main$load_example$Q10MouseEventQ5State$Q5StateaQ6Action);
+   return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("cmdbar")], [Wy.copy(cb), Wy.copy(rb), Wy.copy(cf), Wy.copy(l), Wy.copy(egs)]);
 }
 function wyweb$main$toggle$Q6stringQ6Toggle$Q4Node(lab, onclick) {
    let t = web$html$input$aQ9AttributeaQ4Node$Q4Node([new Wy.Record({key: "type", value: "checkbox"}), web$html$click$Q7handler$Q9Attribute(onclick)], [""]);
    let l = web$html$label$Q4Node$Q4Node(Wy.copy(lab));
    return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$style$Q6string$Q9Attribute("display: inline;")], [Wy.copy(t), Wy.copy(l)]);
+}
+function wyweb$main$create_examples$aQ6stringQ6Toggle$Q4Node(labels, onchange) {
+   let children = Wy.array("", labels.length);
+   for(let i = 0;i < labels.length;i = i + 1) {
+      children[i] = web$html$option$Q4Node$Q4Node(Wy.copy(labels[i]));
+   }
+   return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("egbar")], ["Examples: ", web$html$select$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("egselect"), web$html$change$Q7handler$Q9Attribute(onchange)], Wy.copy(children))]);
 }
 function wyweb$main$create_msgbox$Q5State$Q4Node(s) {
    let contents = "";
@@ -214,6 +234,21 @@ function wyweb$main$get_editor_text$Q3dom6Window$Q6string(w) {
    let aceEditor = ace$ace$edit$u2Q6stringQ7Element$Q6Editor(div);
    return aceEditor.getValue();
 }
+function wyweb$main$set_editor_text$Q3dom6Window$V(w) {
+   let sel = w.document.getElementById("egselect");
+   Wy.assert(is$Q3dom4Nodeqr31m2Q6stringQ13EventListenerV16addEventListenerm2Q6stringQ13EventListenerV19removeEventListenerI8nodeTypeQ6string8nodeNameu2NQ7Element6parentaQ4Node10childNodesQ4Node10firstChildQ4Node9lastChildQ4Node11nextSiblingQ4Node15previousSiblingB11isConnectedfVB13hasChildNodesQ6string9nodeValueu2NQ6string11textContentmQ4NodeV11appendChildmQ4NodeV11removeChildm2Q4NodeQ4NodeV12replaceChildQ19CssStyleDeclaration5styleaQ7Element8childrenQ6string9innerTextm2Q6stringQ6stringV12setAttributeI4colsQ6string12defaultValueB8disabledI9maxLengthQ6string4nameB8readOnlyB8requiredI4rowsQ6string5valueB4wrap(sel));
+   let label = sel.value;
+   let text = "";
+   for(let i = 0;i < Wy.copy(wyweb$main$EG_NAMES$static).length;i = i + 1) {
+      if(Wy.equals(label, Wy.copy(wyweb$main$EG_NAMES$static)[i]))  {
+         text = Wy.copy(Wy.copy(wyweb$main$EG_TEXT$static)[i]);
+         break;
+      }
+   }
+   let div = w.document.getElementById("code");
+   let aceEditor = ace$ace$edit$u2Q6stringQ7Element$Q6Editor(div);
+   aceEditor.setValue(Wy.copy(text), 0);
+}
 function wyweb$main$clear_editor_markers$Q3dom6WindowaQ4uint$V(w, markers) {
    let div = w.document.getElementById("code");
    let editor = ace$ace$edit$u2Q6stringQ7Element$Q6Editor(div);
@@ -250,6 +285,9 @@ function is$Q8compiler8Responser2Q6string6resultaQ5Error6errors(v) {
    } else if(((typeof v.errors) === "undefined") || (!is$aQ5Error(v.errors)))  {
       return false;
    }
+   return true;
+}
+function is$Q3dom4Nodeqr31m2Q6stringQ13EventListenerV16addEventListenerm2Q6stringQ13EventListenerV19removeEventListenerI8nodeTypeQ6string8nodeNameu2NQ7Element6parentaQ4Node10childNodesQ4Node10firstChildQ4Node9lastChildQ4Node11nextSiblingQ4Node15previousSiblingB11isConnectedfVB13hasChildNodesQ6string9nodeValueu2NQ6string11textContentmQ4NodeV11appendChildmQ4NodeV11removeChildm2Q4NodeQ4NodeV12replaceChildQ19CssStyleDeclaration5styleaQ7Element8childrenQ6string9innerTextm2Q6stringQ6stringV12setAttributeI4colsQ6string12defaultValueB8disabledI9maxLengthQ6string4nameB8readOnlyB8requiredI4rowsQ6string5valueB4wrap(v) {
    return true;
 }
 function is$Q8compiler8Responser2Q6string6resultQ6string2js(v) {
