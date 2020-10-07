@@ -55,11 +55,11 @@ public type Error is {
 }
 
 // Construct a simple request
-function Request(bool verify, bool check, bool counterexamples, string code) -> Request:
+function Request(bool verify, bool check, bool counterexamples, string code, string[] deps) -> Request:
     return {
         code: code,
         verify: verify,
         counterexamples: counterexamples,
         quickcheck: check,
-        dependencies: []
+        dependencies: deps
     }

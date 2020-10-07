@@ -17,9 +17,18 @@ public class FrontPage extends HtmlPage {
 
 	@Override
 	public void writeBodyContent(PrintStream writer, Map<String,String> parameters) {
+		String deps = "";
+		for(int i=0;i!=dependencies.length;++i) {
+			if(i != 0) {
+				deps += ",";
+			}
+			deps += "'" + dependencies[i] + "'";
+		}
+		deps = "[" + deps + "]";
 		writer.println("<div id='root'></div>");
 		writer.println("<script>");
-		writer.println("window.onload = function() { wyweb$main$run(document.getElementById('root'),window); };");
+		writer.println(
+				"window.onload = function() { wyweb$main$run(document.getElementById('root'),window," + deps + "); };");
 		writer.println("</script>");
 	}
 }

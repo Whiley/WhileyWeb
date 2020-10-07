@@ -56,6 +56,7 @@ public type State is {
     bool console,
     bool counterexamples,
     bool javascript,
+    string[] dependencies,
     uint[] markers
 }
 
@@ -98,7 +99,7 @@ function compile_clicked(MouseEvent e, State s) -> (State sp, Action[] as):
  */
 function compile_begin(State s, string text) ->  (State sp, Action[] as):
     // Construct appropriate request
-    compiler::Request cr = compiler::Request(s.verification,s.check,s.counterexamples,text)
+    compiler::Request cr = compiler::Request(s.verification,s.check,s.counterexamples,text,s.dependencies)
     // Turn into JSON string
     string r = JSON::stringify(cr)
     // Post request
@@ -193,12 +194,6 @@ function create_toolbar(State s) -> Node:
         default:
           cb = button([click(&compile_clicked),disabled()],"Compile")
           l = LOADING
-    // Construct run button
-    Node rb
-    if s.state == READY_RUN:
-        rb = button("Run")
-    else:
-        rb = button([disabled()],"Run")        
     // Construct toggles
     Node vt = toggle("Verification", &toggle_verification)
     Node qt = toggle("Check", &toggle_check)
@@ -208,7 +203,7 @@ function create_toolbar(State s) -> Node:
     Node cf = div([id("configbar")],[vt,qt,ct,et,jt])
     Node egs = create_examples(EG_NAMES,&load_example)
     //
-    return div([id("cmdbar")],[cb,rb,cf,l,egs])
+    return div([id("cmdbar")],[cb,cf,l,egs])
 
 function toggle(string lab, Toggle onclick) -> Node:
     Node t = input([{key:"type",value:"checkbox"},click(onclick)],[""])
@@ -260,7 +255,7 @@ function create_javascript(State s) -> Node:
 // Controller
 // =========================================
 
-public export method run(dom::Node root, dom::Window window):
+public export method run(dom::Node root, dom::Window window, string[] deps):
     // Construct initial model
     State state = {
         state: READY,
@@ -271,6 +266,7 @@ public export method run(dom::Node root, dom::Window window):
         javascript: false,
         binary: "binary",
         output: "output",
+        dependencies: deps,
         markers: []
     }
     // Create the "web app"

@@ -1,6 +1,6 @@
 'use strict';
-function wyweb$compiler$Request$BBBQ6string$Q7Request(verify, check, counterexamples, code) {
-   return new Wy.Record({code: Wy.copy(code), verify: verify, counterexamples: counterexamples, quickcheck: check, dependencies: []});
+function wyweb$compiler$Request$BBBQ6stringaQ6string$Q7Request(verify, check, counterexamples, code, deps) {
+   return new Wy.Record({code: Wy.copy(code), verify: verify, counterexamples: counterexamples, quickcheck: check, dependencies: Wy.copy(deps)});
 }
 const wyweb$main$EG_NAMES$static = ["Hello World", "Absolute", "IndexOf"];
 const wyweb$main$EG_TEXT$static = ["import std::io\nimport std::ascii\n\nmethod main():\n    io::println(\"hello world\")", "function abs(int x) -> (int r)\nensures r >= 0\nensures (r == x) || (r == -x):\n    //\n    if x >= 0:\n        return x\n    else:\n        return -x", "type nat is (int x) where x >= 0\n\nfunction indexOf(int[] items, int item) -> (int r)\n// If valid index returned, element matches item\nensures r >= 0 ==> items[r] == item\n// If invalid index return, no element matches item\nensures r <  0 ==> all { i in 0..|items| | items[i] != item }\n// Return value is between -1 and size of items\nensures r >= -1 && r < |items|:\n    //\n    nat i = 0\n    while i < |items|\n        where all { k in 0 .. i | items[k] != item }:\n        //    \n        if items[i] == item:\n            return i\n        i = i + 1\n    //\n    return -1"];
@@ -72,7 +72,7 @@ function wyweb$main$compile_clicked$Q10MouseEventQ5State$Q5StateaQ6Action(e, s) 
 function wyweb$main$compile_begin$Q5StateQ6string$Q5StateaQ6Action(s, text) {
    let as;
    let sp;
-   let cr = wyweb$compiler$Request$BBBQ6string$Q7Request(s.verification, s.check, s.counterexamples, Wy.copy(text));
+   let cr = wyweb$compiler$Request$BBBQ6stringaQ6string$Q7Request(s.verification, s.check, s.counterexamples, Wy.copy(text), Wy.copy(s.dependencies));
    let r = js$JSON$stringify(Wy.copy(cr));
    return [Wy.copy(s), [web$io$post$Q6stringQ6stringQ8consumerQ7handler$Q6Action("/compile", Wy.copy(r), wyweb$main$compile_success$Q5StateQ6string$Q5StateaQ6Action, wyweb$main$compile_error$Q5State$Q5StateaQ6Action)]];
 }
@@ -157,12 +157,6 @@ function wyweb$main$create_toolbar$Q5State$Q4Node(s) {
          break;
       }
    }
-   let rb;
-   if(s.state === wyweb$main$READY_RUN$static)  {
-      rb = web$html$button$Q4Node$Q4Node("Run");
-   } else  {
-      rb = web$html$button$aQ9AttributeQ4Node$Q4Node([web$html$disabled$V$Q9Attribute()], "Run");
-   }
    let vt = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("Verification", wyweb$main$toggle_verification$Q10MouseEventQ5State$Q5StateaQ6Action);
    let qt = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("Check", wyweb$main$toggle_check$Q10MouseEventQ5State$Q5StateaQ6Action);
    let ct = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("Console", wyweb$main$toggle_console$Q10MouseEventQ5State$Q5StateaQ6Action);
@@ -170,7 +164,7 @@ function wyweb$main$create_toolbar$Q5State$Q4Node(s) {
    let jt = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("JavaScript", wyweb$main$toggle_javascript$Q10MouseEventQ5State$Q5StateaQ6Action);
    let cf = web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("configbar")], [Wy.copy(vt), Wy.copy(qt), Wy.copy(ct), Wy.copy(et), Wy.copy(jt)]);
    let egs = wyweb$main$create_examples$aQ6stringQ6Toggle$Q4Node(Wy.copy(wyweb$main$EG_NAMES$static), wyweb$main$load_example$Q10MouseEventQ5State$Q5StateaQ6Action);
-   return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("cmdbar")], [Wy.copy(cb), Wy.copy(rb), Wy.copy(cf), Wy.copy(l), Wy.copy(egs)]);
+   return web$html$div$aQ9AttributeaQ4Node$Q4Node([web$html$id$Q6string$Q9Attribute("cmdbar")], [Wy.copy(cb), Wy.copy(cf), Wy.copy(l), Wy.copy(egs)]);
 }
 function wyweb$main$toggle$Q6stringQ6Toggle$Q4Node(lab, onclick) {
    let t = web$html$input$aQ9AttributeaQ4Node$Q4Node([new Wy.Record({key: "type", value: "checkbox"}), web$html$click$Q7handler$Q9Attribute(onclick)], [""]);
@@ -212,8 +206,8 @@ function wyweb$main$create_javascript$Q5State$Q4Node(s) {
       return web$html$div$Q4Node$Q4Node("");
    }
 }
-function wyweb$main$run(root, window) {
-   let state = new Wy.Record({state: wyweb$main$READY$static, verification: false, check: false, console: false, counterexamples: false, javascript: false, binary: "binary", output: "output", markers: []});
+function wyweb$main$run(root, window, deps) {
+   let state = new Wy.Record({state: wyweb$main$READY$static, verification: false, check: false, console: false, counterexamples: false, javascript: false, binary: "binary", output: "output", dependencies: Wy.copy(deps), markers: []});
    let app = new Wy.Record({model: Wy.copy(state), view: wyweb$main$view$Q5State$Q4Node});
    web$app$run(Wy.copy(app), root, window);
    wyweb$main$configure_editor$Q3dom6Window$V(window);
