@@ -30,9 +30,11 @@ type Toggle is function(MouseEvent,State)->(State,Action[])
 // Model
 // =========================================
 
-final string[] EG_NAMES = ["Hello World","Absolute","IndexOf"]
+final string[] EG_NAMES = ["","Hello World","Absolute","IndexOf"]
 
 final string[] EG_TEXT = [
+    // blank
+    "",
     // Hello World
     "import std::io\nimport std::ascii\n\nmethod main():\n    io::println(\"hello world\")",
     // Absolute Function
@@ -53,7 +55,6 @@ public type State is {
     string binary,
     bool verification,
     bool check,
-    bool console,
     bool counterexamples,
     bool javascript,
     string[] dependencies,
@@ -66,10 +67,6 @@ function toggle_verification(MouseEvent e, State s) -> (State sp, Action[] as):
 
 function toggle_check(MouseEvent e, State s) -> (State sp, Action[] as):
     s.check = !s.check
-    return s,[]
-
-function toggle_console(MouseEvent e, State s) -> (State sp, Action[] as):
-    s.console = !s.console
     return s,[]
 
 function toggle_counterexamples(MouseEvent e, State s) -> (State sp, Action[] as):
@@ -90,8 +87,8 @@ function load_example(MouseEvent e, State s) -> (State sp, Action[] as):
 function compile_clicked(MouseEvent e, State s) -> (State sp, Action[] as):
     // Update state
     s.state = COMPILING
-    // Extract text from ACE editor
-    return s,[io::query(&get_editor_text,&compile_begin)]
+    // Extract text from ACE editor, and save current state
+    return s,[io::query(&get_editor_text,&compile_begin),io::call(&save_current_state)]
 
 /**
  * The ACE editor has provided text for compilation.  Therefore, we
@@ -170,10 +167,9 @@ function view(State s) -> Node:
     Node editor = create_editor(s)
     Node toolbar = create_toolbar(s)
     Node msgbox = create_msgbox(s)
-    Node console = create_console(s)
     Node js = create_javascript(s)
     //
-    return div([editor,toolbar,msgbox,console,js])
+    return div([editor,toolbar,msgbox,js])
 
 function create_editor(State s) -> Node:
     return div([id("code")],"")
@@ -190,20 +186,22 @@ function create_toolbar(State s) -> Node:
     switch s.state:
         case READY,READY_RUN,SUCCESS,ERROR:
           cb = button([click(&compile_clicked)],"Compile")
-          l = div("")
+          l = ""
         default:
           cb = button([click(&compile_clicked),disabled()],"Compile")
           l = LOADING
     // Construct toggles
     Node vt = toggle("Verification", &toggle_verification)
     Node qt = toggle("Check", &toggle_check)
-    Node ct = toggle("Console", &toggle_console)
     Node et = toggle("Counterexamples", &toggle_counterexamples)
     Node jt = toggle("JavaScript", &toggle_javascript)
-    Node cf = div([id("configbar")],[vt,qt,ct,et,jt])
+    Node cf = div([id("configbar")],[vt,qt,et,jt])
+    // Construct elastic
+    Node el = div([id("elastic")],"")
+    // Construct examples selection
     Node egs = create_examples(EG_NAMES,&load_example)
     //
-    return div([id("cmdbar")],[cb,cf,l,egs])
+    return div([id("cmdbar")],[cb,cf,l,el,egs])
 
 function toggle(string lab, Toggle onclick) -> Node:
     Node t = input([{key:"type",value:"checkbox"},click(onclick)],[""])
@@ -234,15 +232,6 @@ function create_msgbox(State s) -> Node:
     return div([id("messages")],[contents])
 
 /**
- * The console reports output from running the code.
- */
-function create_console(State s) -> Node:
-    if s.console:
-        return div([id("console")],s.output)
-    else:
-        return div("")
-
-/**
  * Provides the generated JavaScript
  */
 function create_javascript(State s) -> Node:
@@ -261,7 +250,6 @@ public export method run(dom::Node root, dom::Window window, string[] deps):
         state: READY,
         verification: false,
         check: false,
-        console: false,
         counterexamples: false,
         javascript: false,
         binary: "binary",
@@ -275,6 +263,8 @@ public export method run(dom::Node root, dom::Window window, string[] deps):
     web::app::run(app,root,window)
     // Configure ACE editor
     configure_editor(window)
+    // Load previous state (if applicable)
+    load_saved_state(window)
 
 // =========================================
 // External Actions
@@ -331,6 +321,28 @@ public method set_editor_text(dom::Window w):
     Editor aceEditor = ace::edit(div)
     // Set current text
     aceEditor->setValue(text,0)
+
+method load_saved_state(dom::Window w):
+    // Access local storage
+    dom::Storage db = w->localStorage
+    // Attempt to read it
+    string|null st = db->getItem("whileyweb$saved")
+    // Update editor if exits
+    if st is string:
+        // Find code div
+        dom::Element div = w->document->getElementById("code")
+        // Extract editor instance from div
+        Editor aceEditor = ace::edit(div)
+        // Set current text
+        aceEditor->setValue(st,0)
+
+method save_current_state(dom::Window w):
+    // Access local storage
+    dom::Storage db = w->localStorage
+    // Extract state from ACE
+    string st = get_editor_text(w)
+    // Write to local storage
+    db->setItem("whileyweb$saved",st)
 
 /**
  * Clear existing markers using the saved identifiers from before.
