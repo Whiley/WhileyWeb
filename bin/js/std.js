@@ -563,9 +563,7 @@ function std$collections$hash$hash$aB$Q3u32(xs) {
 }
 function std$collections$hash_map$HashMap$V$Q7HashMap() {
    let r;
-   return std$collections$hash_map$HashMap$Q4hash2fn$Q7HashMap(function(p0) {
-      return std$collections$hash$hash$I$Q3u32(p0);
-   });
+   return std$collections$hash_map$HashMap$Q4hash2fn$Q7HashMap(std$collections$hash$hash$I$Q3u32);
 }
 function std$collections$hash_map$HashMap$Q4hash2fn$Q7HashMap(hasher) {
    let r;

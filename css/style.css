@@ -19,7 +19,7 @@ body {
 #container {
     margin: 2em auto;
     padding: 0px;
-    width: 1024px;
+    width: 80%;
     text-align: left;
     border-radius: 12px;
     border: none;
@@ -30,7 +30,7 @@ body {
 #content {
     padding: 1em;
     font-family: 'Pontano Sans', Verdana, Helvetica, sans-serif;
-    font-size: 11pt;    
+    font-size: 16pt;
 }
 
 #code {
@@ -38,22 +38,8 @@ body {
     height: 400px;
     border-radius: 12px;
     background-color: #f9f9f9;
-}
-
-#console {
-    font-family: "Courier New", Courier, monospace;
-    font-size: 11pt;
-    background-color: #f9f9f9;
-    color: #888888;
-    width: 100%;
-    height: 100px;
-    min-height: 100px;
-    box-sizing: border-box;
-    border: 1px solid #ddd;
-    border-radius: 12px;    
+    font-size: 16pt;
     resize: vertical;
-    margin-top: 1em;
-    padding: 0.5em;
 }
 
 #bin {
@@ -147,41 +133,28 @@ nav.menubar > ul > li > ul a {
 }
 
 #cmdbar {
-    display: inline-block;
-    vertical-align: middle;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
     margin-top: 0.5em;
+    font-size: 14pt;
+}
+
+#cmdbar * {
+    margin: 0 0.25em 0 0;
 }
 
 #configbar {
-    display: inline-block;
-    font-size: 10pt;
-    vertical-align: middle;
 }
 
 #egbar {
-    float: right;
     font-weight: bold;    
     margin-top: 0.5em;
-    font-size: 10pt;
-}
-
-#depbar {
-    display: inline-block;    
-    font-size: 10pt;
     vertical-align: middle;
-    margin: 0.5em 0.5em 0.5em 0.5em;
-    padding: 0.5em;
-    width: 25%;
-    border: 1px solid #ddd;
-}
-
-#deplist {
-    font-size: 8pt;
-    vertical-align: middle;
+    font-size: 16pt;
 }
 
 #cmdbar button {
-    font-size: 12pt;
     background-color: #e5d3a7;
     border-radius: 12px;
     border: none;
@@ -189,7 +162,7 @@ nav.menubar > ul > li > ul a {
     padding: 15px 32px;
     text-align: center;
     text-decoration: none;
-    display: inline-block;
+    font-size: 16pt;
 }
 
 #cmdbar button:active {
@@ -203,10 +176,8 @@ nav.menubar > ul > li > ul a {
     color: #888888;    
 }
 
-#spinner {
-    display: none;
-    vertical-align: middle;
-    margin: 1px;
+#elastic {
+    flex-grow: 1;    
 }
 
 /**
@@ -225,23 +196,4 @@ nav.menubar > ul > li > ul a {
     text-decoration: none;
     border-bottom: 2px goldenrod dotted;
     position: absolute;
-}
-
-/*
- * Resize handle for code area.
- */
-.ui-resizable-handle {
-	position: absolute;
-	font-size: 0.1px;
-	display: block;
-}
-.ui-resizable-s {
-	cursor: row-resize;
-	height: 16px;
-	width: 16px;
-	bottom: 0;
-	right: 0;
-	background: url("../images/resizable.png");
-	background-repeat: no-repeat;
-	background-size: 80%;
 }
