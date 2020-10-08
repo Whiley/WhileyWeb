@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -19,6 +20,9 @@ import java.util.concurrent.ForkJoinPool;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import com.whileyweb.util.ProcessTimerMethod;
+
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
@@ -73,6 +77,7 @@ import wyjs.core.JavaScriptFile;
 import wyjs.io.JavaScriptFilePrinter;
 
 public class WhileyWebCompiler extends HttpMethodDispatchHandler {
+
 	// Have no idea why this is needed.
 	public static Configuration.Schema TEMPORARY_SCHEMA = Configuration.fromArray(
 			Configuration.UNBOUND_STRING(Activator.PKGNAME_CONFIG_OPTION, "list of globally installed plugins", true));
@@ -86,13 +91,13 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 			JS_PLATFORM.getConfigurationSchema(),
 			QuickCheck.DESCRIPTOR.getConfigurationSchema());
 
-	private final Content.Registry registry;
-	private final Path.Root repository;
+	private final int timeout;
+	private final String repository;
 
-	public WhileyWebCompiler(Content.Registry registry, Path.Root repository) throws IOException {
+	public WhileyWebCompiler(String repository, int timeout) throws IOException {
 		super(HttpMethodDispatchHandler.ALLOW_POST);
-		this.registry = registry;
 		this.repository = repository;
+		this.timeout = timeout;
 	}
 
 	@Override
@@ -109,18 +114,46 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 			boolean quickcheck = json.getBoolean("quickcheck");
 			String[] dependencies = toStringArray(json.getJSONArray("dependencies"));
 			// Run the build
-			String r = compile(code, verification, counterexamples, quickcheck, dependencies);
-			// Configure response
-			response.setEntity(new StringEntity(r)); // ContentType.APPLICATION_JSON fails?
-			response.setStatusCode(HttpStatus.SC_OK);
-			// Done
-			return;
+			try {
+				// NOTE: we use ProcessTimeMethod here to ensure that a proper
+				// timeout can be enforced. This is not the ideal way to do
+				// this, but for now it works.
+				ProcessTimerMethod.Outcome result = ProcessTimerMethod.exec(timeout, this.getClass().getCanonicalName(),
+						"compile", repository, code, verification, counterexamples, quickcheck, dependencies);
+				//
+				if (result.exitCode() != null) {
+					String reply = result.getReturnAs(String.class);
+					// Configure response
+					response.setEntity(new StringEntity(reply)); // ContentType.APPLICATION_JSON fails?
+					response.setStatusCode(HttpStatus.SC_OK);
+					// Done
+					return;
+				} else {
+					errorResponse(response, "timeout");
+				}
+			} catch (Throwable e) {
+				e.printStackTrace();
+				errorResponse(response, "internal failure (" + e.getMessage() + ")");
+			}
 		} catch (ParseException e) {
 		} catch (JSONException e) {
 		} catch (IOException e) {
 		}
 		// Malformed Request
 		response.setStatusCode(HttpStatus.SC_BAD_REQUEST);
+	}
+
+	private void errorResponse(HttpResponse response, String msg) {
+		HashMap<String, Object> result = new HashMap<>();
+		result.put("result", "exception");
+		result.put("text", msg);
+		String r = toJsonString(result);
+		try {
+			response.setEntity(new StringEntity(r));
+		} catch (UnsupportedEncodingException e) {
+
+		}
+		response.setStatusCode(HttpStatus.SC_OK);
 	}
 
 	private HttpEntity checkHasEntity(HttpRequest request) throws HttpException {
@@ -132,10 +165,11 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		}
 	}
 
-	private String compile(String code, boolean verification, boolean counterexamples, boolean quickcheck, String[] dependencies)
+	public static String compile(String repositoryLocation, String code, boolean verification, boolean counterexamples, boolean quickcheck, String[] dependencies)
 			throws IOException, HttpException {
+		DirectoryRoot repository = new DirectoryRoot(repositoryLocation,Main.REGISTRY);
 		// Determine project directory
-		Path.Root localRoot = new VirtualRoot(registry);
+		Path.Root localRoot = new VirtualRoot(Main.REGISTRY);
 		// Read the configuration schema
 		HashMapConfiguration configuration = new HashMapConfiguration(SCHEMA);
 		// Write default package name
@@ -171,7 +205,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		HashMap<String, Object> result = new HashMap<>();
 		try {
 			// Resolve package dependencies
-			List<Build.Package> pkgs = resolvePackageDependencies(repository, SCHEMA, registry, dependencies);
+			List<Build.Package> pkgs = resolvePackageDependencies(repository, SCHEMA, Main.REGISTRY, dependencies);
 			project.getPackages().addAll(pkgs);
 			//
 			boolean ok = project.build(ForkJoinPool.commonPool(), Build.NULL_METER).get();

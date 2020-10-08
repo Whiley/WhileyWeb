@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.http.ConnectionClosedException;
@@ -18,12 +20,12 @@ import org.apache.http.impl.bootstrap.ServerBootstrap;
 import com.whileyweb.pages.FrontPage;
 import com.whileyweb.util.HtmlPage;
 
+import com.whileyweb.util.OptArg;
 import jwebkit.http.HttpFileHandler;
 import wyc.lang.WhileyFile;
 import wycli.cfg.ConfigFile;
 import wycli.lang.SemanticVersion;
 import wyfs.lang.Content;
-import wyfs.lang.Content.Type;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
 import wyfs.util.DefaultContentRegistry;
@@ -54,14 +56,26 @@ public class Main {
 	 * @author David J. Pearce
 	 *
 	 */
-	private static final Content.Registry REGISTRY = new DefaultContentRegistry()
+	public static final Content.Registry REGISTRY = new DefaultContentRegistry()
 			.register(WhileyFile.ContentType, "whiley").register(WyilFile.ContentType, "wyil")
 			.register(ConfigFile.ContentType, "toml").register(ZipFile.ContentType, "zip");
+
+	private static final OptArg[] OPTIONS = {
+			// Standard options
+			new OptArg("timeout", "t", OptArg.INT, "Set timeout constraint per query (in ms)", 10000),
+			new OptArg("pkgs", "p", OptArg.STRINGARRAY, "Specify packages to make available for compilation", new String[] {"std"}),
+	};
 
 	// =======================================================================
 	// Main Entry Point
 	// =======================================================================
-	public static void main(String[] argc) throws IOException {
+	public static void main(String[] _args) throws IOException {
+		List<String> args = new ArrayList<>(Arrays.asList(_args));
+		Map<String, Object> options = OptArg.parseOptions(args, OPTIONS);
+		// Determine requested timeout value
+		int timeout = (Integer) options.get("timeout");
+		// Determine requested packages
+		String[] packages = (String[]) options.get("pkgs");
 		// Determine location of repository
 		String userhome = System.getProperty("user.home");
 		String repositoryLocation = userhome + File.separator + ".whiley" + File.separator + "repository";
@@ -70,10 +84,10 @@ public class Main {
 		// Determine list of installed packages
 		String[] pkgs = determineInstalledPackages(repository);
 		// Determine default configure deps
-		String[] deps = determineDefaultDependencies(pkgs,"std");
+		String[] deps = determineDefaultDependencies(pkgs,packages);
 		// Attempt to start the web server
 		try {
-			HttpServer server = startWebServer(repository,pkgs,deps);
+			HttpServer server = startWebServer(repositoryLocation, pkgs, deps, timeout);
 			server.start();
 			server.awaitTermination(-1, TimeUnit.MILLISECONDS);
 		} catch(Exception e) {
@@ -82,7 +96,7 @@ public class Main {
 	}
 
 
-	public static HttpServer startWebServer(Path.Root repository, String[] packages, String[] dependencies) throws IOException {
+	public static HttpServer startWebServer(String repository, String[] packages, String[] dependencies, int timeout) throws IOException {
 		// Construct appropriate configuration for socket over which HTTP
 		// server will run.
 		SocketConfig socketConfig = SocketConfig.custom().setSoTimeout(1500).build();
@@ -102,7 +116,7 @@ public class Main {
 						.registerHandler("/bin/js/*", new HttpFileHandler(new File("."),TEXT_JAVASCRIPT))
 						.registerHandler("*.png", new HttpFileHandler(new File("."),IMAGE_PNG))
 						.registerHandler("*.gif", new HttpFileHandler(new File("."),IMAGE_GIF))
-						.registerHandler("/compile", new WhileyWebCompiler(REGISTRY, repository))
+						.registerHandler("/compile", new WhileyWebCompiler(repository, timeout))
 						.registerHandler("/", new FrontPage(packages,dependencies))
 						.registerHandler("*", new HtmlPage())
 						.create();
