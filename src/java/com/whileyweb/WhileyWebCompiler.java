@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 
 import org.json.JSONArray;
@@ -36,7 +37,9 @@ import org.apache.http.util.EntityUtils;
 import jwebkit.http.HttpMethodDispatchHandler;
 import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
+import wybs.lang.Build.Meter;
 import wybs.util.AbstractCompilationUnit;
+import wybs.util.Logger;
 import wybs.util.AbstractCompilationUnit.Attribute;
 import wybs.util.AbstractCompilationUnit.Attribute.Span;
 import wybs.util.AbstractCompilationUnit.Value;
@@ -44,13 +47,20 @@ import wybs.util.SequentialBuildProject;
 import wyc.Activator;
 import wyc.cmd.QuickCheck;
 import wyc.lang.WhileyFile;
-import wyc.util.TestUtils.Environment;
-import wycc.WyMain;
-import wycc.cfg.ConfigFile;
-import wycc.cfg.Configuration;
-import wycc.cfg.HashMapConfiguration;
+import wycli.WyMain;
+import wycli.cfg.ConfigFile;
+import wycli.cfg.Configuration;
+import wycli.cfg.HashMapConfiguration;
+import wycli.cfg.Configuration.Schema;
+import wycli.lang.Command;
+import wycli.lang.Command.Environment;
+import wycli.lang.Package.Resolver;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.lang.Content.Registry;
+import wyfs.lang.Path.Filter;
+import wyfs.lang.Path.ID;
+import wyfs.lang.Path.Root;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Pair;
 import wyfs.util.Trie;
@@ -137,10 +147,8 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		if(counterexamples) {
 			configuration.write(Activator.COUNTEREXAMPLE_CONFIG_OPTION, new Value.Bool(true));
 		}
-		// Construct temporary build environment
-		Build.Environment environment = new Environment(localRoot,false);
 		// Construct environment and execute arguments
-		Build.Project project = new SequentialBuildProject(environment,localRoot);
+		Command.Project project = new CommandProject(localRoot,configuration);
 		// Initialise the whiley platform
 		WHILEY_PLATFORM.initialise(configuration, project);
 		JS_PLATFORM.initialise(configuration, project);
@@ -166,14 +174,14 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 			List<Build.Package> pkgs = resolvePackageDependencies(repository, SCHEMA, registry, dependencies);
 			project.getPackages().addAll(pkgs);
 			//
-			boolean ok = project.build(ForkJoinPool.commonPool(), environment.getMeter()).get();
+			boolean ok = project.build(ForkJoinPool.commonPool(), Build.NULL_METER).get();
 			// Extract the binary file
 			Path.Entry<WyilFile> binFile = root.get(binID, WyilFile.ContentType);
 			WyilFile binary = binFile.read();
 			// Perform quickcheck testing!
 			if(ok && quickcheck) {
 				QuickCheck.Context context = QuickCheck.DEFAULT_CONTEXT;
-				ok = new QuickCheck(environment, System.out, System.err).check(project, binary, context,
+				ok = new QuickCheck(Logger.NULL, System.out, System.err).check(project, binary, context,
 						Collections.EMPTY_LIST);
 			}
 			// Flush everything to disk
@@ -252,6 +260,123 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		return packages;
 	}
 
+	/**
+	 * Yes, this class is a complete hack which needs to be replaced in the VERY
+	 * near future.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	private static class CommandProject extends SequentialBuildProject implements Command.Project {
+		private final Configuration configuration;
+		public CommandProject(Path.Root root, Configuration configuration) {
+			super(root);
+			this.configuration = configuration;
+		}
+
+		@Override
+		public Schema getConfigurationSchema() {
+			return configuration.getConfigurationSchema();
+		}
+
+		@Override
+		public <T> boolean hasKey(ID key) {
+			return configuration.hasKey(key);
+		}
+
+		@Override
+		public <T> T get(Class<T> kind, ID key) {
+			return configuration.get(kind, key);
+		}
+
+		@Override
+		public <T> void write(ID key, T value) {
+			configuration.write(key, value);
+		}
+
+		@Override
+		public List<ID> matchAll(Filter filter) {
+			return configuration.matchAll(filter);
+		}
+
+		@Override
+		public Environment getEnvironment() {
+			return new Command.Environment() {
+
+				@Override
+				public <T> void write(ID key, T value) {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public List<ID> matchAll(Filter filter) {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public <T> boolean hasKey(ID key) {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public Schema getConfigurationSchema() {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public <T> T get(Class<T> kind, ID key) {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public Root getRoot() {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public List<wybs.lang.Build.Project> getProjects() {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public Resolver getPackageResolver() {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public Meter getMeter() {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public Logger getLogger() {
+					return Logger.NULL;
+				}
+
+				@Override
+				public ExecutorService getExecutor() {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public Registry getContentRegistry() {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public List<Command.Descriptor> getCommandDescriptors() {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public List<Command.Platform> getBuildPlatforms() {
+					throw new UnsupportedOperationException();
+				}
+			};
+		}
+
+	}
+
 	private static class Package implements Build.Package {
 		private final Path.Root root;
 		private final Configuration configuration;
@@ -262,13 +387,13 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		}
 
 		@Override
-		public Configuration getConfiguration() {
-			return configuration;
+		public Path.Root getRoot() {
+			return root;
 		}
 
 		@Override
-		public Path.Root getRoot() {
-			return root;
+		public <T extends Value> T get(Class<T> kind, Trie key) {
+			return configuration.get(kind, key);
 		}
 	}
 

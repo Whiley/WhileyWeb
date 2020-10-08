@@ -20,8 +20,8 @@ import com.whileyweb.util.HtmlPage;
 
 import jwebkit.http.HttpFileHandler;
 import wyc.lang.WhileyFile;
-import wycc.cfg.ConfigFile;
-import wycc.lang.SemanticVersion;
+import wycli.cfg.ConfigFile;
+import wycli.lang.SemanticVersion;
 import wyfs.lang.Content;
 import wyfs.lang.Content.Type;
 import wyfs.lang.Path;
