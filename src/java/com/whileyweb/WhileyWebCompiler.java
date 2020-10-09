@@ -130,10 +130,12 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 					return;
 				} else {
 					errorResponse(response, "timeout");
+					return;
 				}
 			} catch (Throwable e) {
 				e.printStackTrace();
 				errorResponse(response, "internal failure (" + e.getMessage() + ")");
+				return;
 			}
 		} catch (ParseException e) {
 		} catch (JSONException e) {

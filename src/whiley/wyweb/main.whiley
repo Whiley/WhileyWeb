@@ -48,11 +48,13 @@ final uint READY_RUN = 1
 final uint COMPILING = 2
 final uint SUCCESS = 3
 final uint ERROR = 4
+final uint FAILURE = 5
 
 public type State is {
     uint state,
     string output,
     string binary,
+    string error,
     bool verification,
     bool check,
     bool counterexamples,
@@ -118,7 +120,7 @@ function compile_success(State s, string response) ->  (State sp, Action[] as):
             io::call(&(dom::Window w -> clear_editor_markers(w,s.markers))),
             // Timeout for success message
             io::timeout(1000,&compile_readyrun)]
-    else:
+    else if cr.result == "errors":
         assert cr is compiler::Failure // unsafe    
         s.state = ERROR
         // Done
@@ -127,6 +129,14 @@ function compile_success(State s, string response) ->  (State sp, Action[] as):
             io::call(&(dom::Window w -> clear_editor_markers(w,s.markers))),
             // Add ACE editor markers
             io::query(&(dom::Window w -> set_editor_markers(w,cr.errors)),&compile_failure),
+            // Timeout for error message
+            io::timeout(1000,&compile_ready)]
+    else:
+        assert cr is compiler::Exception // unsafe    
+        s.state = FAILURE
+        s.error = cr.text
+        // Done
+        return s,[
             // Timeout for error message
             io::timeout(1000,&compile_ready)]
 
@@ -228,6 +238,8 @@ function create_msgbox(State s) -> Node:
             contents = div([class("message success")],"Success!")
         case ERROR:
             contents = div([class("message error")],"Error!")
+        case FAILURE:
+            contents = div([class("message error")],s.error)
     //
     return div([id("messages")],[contents])
 
@@ -254,6 +266,7 @@ public export method run(dom::Node root, dom::Window window, string[] deps):
         javascript: false,
         binary: "binary",
         output: "output",
+        error: "",
         dependencies: deps,
         markers: []
     }

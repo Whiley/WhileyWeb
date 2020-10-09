@@ -39,6 +39,14 @@ public type Failure is {
     ...
 }
 
+// Respresents an internal failure of some kind (e.g. timeout)
+public type Exception is {
+    string result,
+    // Failure message
+    string text,
+    ...
+}
+
 // Represents a single compiler error associated with a syntactic
 // element.
 public type Error is {
