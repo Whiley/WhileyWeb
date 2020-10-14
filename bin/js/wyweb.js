@@ -82,9 +82,7 @@ function wyweb$main$compile_success$Q5StateQ6string$Q5StateaQ6Action(s, response
          };
       }(s)), web$io$timeout$Q4uintQ7handler$Q6Action(1000, wyweb$main$compile_readyrun$Q5State$Q5StateaQ6Action)]];
    } else  {
-       console.log("STAGE 1");
-       if(Wy.equals(cr.result, Wy.toString("errors")))  {
-       console.log("STAGE 2");	   
+      if(Wy.equals(cr.result, Wy.toString("errors")))  {
          Wy.assert(is$Q8compiler8Responser2Q6string6resultaQ5Error6errors(cr));
          s.state = wyweb$main$ERROR$static;
          return [Wy.copy(s), [web$io$call$mQ3dom6WindowV$Q6Action(function(s) {
@@ -96,8 +94,7 @@ function wyweb$main$compile_success$Q5StateQ6string$Q5StateaQ6Action(s, response
                return wyweb$main$set_editor_markers$Q3dom6WindowaQ8compiler5Error$aQ4uint(w, Wy.copy(cr.errors));
             };
          }(cr), wyweb$main$compile_failure$Q5StateaQ4uint$Q5StateaQ6Action), web$io$timeout$Q4uintQ7handler$Q6Action(1000, wyweb$main$compile_ready$Q5State$Q5StateaQ6Action)]];
-       } else  {
-	   console.log("STAGE 3");	   
+      } else  {
          Wy.assert(is$Q8compiler8Responser2Q6string6resultQ6string4text(cr));
          s.state = wyweb$main$FAILURE$static;
          s.error = Wy.copy(cr.text);
