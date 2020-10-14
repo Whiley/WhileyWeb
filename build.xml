@@ -24,7 +24,7 @@
   <target name="run" depends="compile">
     <java classname="com.whileyweb.Main" fork="true">
       <classpath>
-	<pathelement location="src"/>
+	<pathelement location="src/java"/>
         <pathelement path="${JWEBKIT}"/>
         <path refid="MAVEN_DEPS"/>
       </classpath>
