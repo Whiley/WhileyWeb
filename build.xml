@@ -6,8 +6,8 @@
   <!-- ============================================== -->
 
   <target name="compile">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.8" target="1.8" includeantruntime="true">
-      <src path="src"/>
+    <javac debug="true" destdir="target/classes" debuglevel="vars,lines,source" source="1.8" target="1.8" includeantruntime="true">
+      <src path="src/java"/>
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/>
       <classpath>
@@ -24,7 +24,7 @@
   <target name="run" depends="compile">
     <java classname="com.whileyweb.Main" fork="true">
       <classpath>
-	<pathelement location="src/java"/>
+	<pathelement location="target/classes"/>
         <pathelement path="${JWEBKIT}"/>
         <path refid="MAVEN_DEPS"/>
       </classpath>

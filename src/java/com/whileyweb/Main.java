@@ -64,6 +64,7 @@ public class Main {
 			// Standard options
 			new OptArg("timeout", "t", OptArg.INT, "Set timeout constraint per query (in ms)", 10000),
 			new OptArg("pkgs", "p", OptArg.STRINGARRAY, "Specify packages to make available for compilation", new String[] {"std"}),
+			new OptArg("repository","r", OptArg.STRING, "Specify location of package repository", null)
 	};
 
 	// =======================================================================
@@ -77,8 +78,16 @@ public class Main {
 		// Determine requested packages
 		String[] packages = (String[]) options.get("pkgs");
 		// Determine location of repository
-		String userhome = System.getProperty("user.home");
-		String repositoryLocation = userhome + File.separator + ".whiley" + File.separator + "repository";
+		String repositoryLocation = (String) options.get("repository");
+		//
+		if(repositoryLocation == null) {
+				// Try environment variable
+				repositoryLocation = System.getenv("WHILEY_REPOSITORY");
+				if(repositoryLocation == null) {
+					// Use default location
+					repositoryLocation = System.getProperty("user.home") + File.separator + ".whiley" + File.separator + "repository";
+				}
+		}
 		// Create the repository root
 		DirectoryRoot repository = new DirectoryRoot(repositoryLocation,REGISTRY);
 		// Determine list of installed packages
