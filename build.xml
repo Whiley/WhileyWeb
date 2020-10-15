@@ -1,13 +1,21 @@
 <project name="whileyweb" default="compile">
   <import file="config.xml"/>
 
+  <!-- ================================================================== -->
+  <!-- Setup -->
+  <!-- ================================================================== -->
+
+  <target name="setup">
+    <mkdir dir="${CLASS_DIR}"/>
+  </target> 
+  
   <!-- ============================================== -->
   <!-- Compile Java Files -->
   <!-- ============================================== -->
 
-  <target name="compile">
-    <javac debug="true" destdir="target/classes" debuglevel="vars,lines,source" source="1.8" target="1.8" includeantruntime="true">
-      <src path="src/java"/>
+  <target name="compile" depends="setup">
+    <javac debug="true" destdir="${CLASS_DIR}" debuglevel="vars,lines,source" source="1.8" target="1.8" includeantruntime="true">
+      <src path="${JAVA_DIR}"/>
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/>
       <classpath>
@@ -24,7 +32,7 @@
   <target name="run" depends="compile">
     <java classname="com.whileyweb.Main" fork="true">
       <classpath>
-	<pathelement location="target/classes"/>
+	<pathelement location="${CLASS_DIR}"/>
         <pathelement path="${JWEBKIT}"/>
         <path refid="MAVEN_DEPS"/>
       </classpath>

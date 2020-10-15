@@ -10,7 +10,12 @@
     <remoteRepository refid="remote.repository" />    
   </maven:dependencies>    
   <!-- Set the current WhileyLabs version -->
-  <property name="version" value="${mypom.version}"/>  
+  <property name="version" value="${mypom.version}"/>
+  <!-- Set project layout -->
+  <property name="SRC_DIR" location="src"/>
+  <property name="JAVA_DIR" location="${SRC_DIR}/java"/>
+  <property name="BIN_DIR" location="target"/>
+  <property name="CLASS_DIR" location="${BIN_DIR}/classes"/>  
   <!-- Paths to required JARs -->
   <property name="JWEBKIT" value="lib/jwebkit-v0.1.0.jar"/>  
 </project>
