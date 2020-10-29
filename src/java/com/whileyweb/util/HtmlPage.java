@@ -32,6 +32,12 @@ import org.apache.http.protocol.HttpRequestHandler;
  */
 public class HtmlPage implements HttpRequestHandler {
 
+	private final String gaTrackingID;
+	
+	public HtmlPage(String gaTrackingID) {
+		this.gaTrackingID = gaTrackingID;
+	}
+	
 	@Override
 	public void handle(HttpRequest request, HttpResponse response, HttpContext context)
 			throws HttpException, IOException {
@@ -98,6 +104,15 @@ public class HtmlPage implements HttpRequestHandler {
 		writer.println("<script type=\"text/javascript\" src=\"bin/js/web.js\"></script>");
 		writer.println("<script type=\"text/javascript\" src=\"bin/js/ace.js\"></script>");
 	    writer.println("<script type=\"text/javascript\" src=\"bin/js/wyweb.js\"></script>");
+	    if(gaTrackingID != null) {
+	    	writer.println("<script async src=\"https://www.googletagmanager.com/gtag/js?id=" + gaTrackingID + "\"></script>");
+	    	writer.println("<script>");
+	    	writer.println("window.dataLayer = window.dataLayer || [];");
+	    	writer.println("function gtag(){dataLayer.push(arguments);}");
+	    	writer.println("gtag('js', new Date());");
+	    	writer.println("gtag('config', '" + gaTrackingID + "');");
+	    	writer.println("</script>");
+	    }
 		writer.println("</head>");
 	}
 

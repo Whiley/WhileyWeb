@@ -64,7 +64,8 @@ public class Main {
 			// Standard options
 			new OptArg("timeout", "t", OptArg.INT, "Set timeout constraint per query (in ms)", 10000),
 			new OptArg("pkgs", "p", OptArg.STRINGARRAY, "Specify packages to make available for compilation", new String[] {"std"}),
-			new OptArg("repository","r", OptArg.STRING, "Specify location of package repository", null)
+			new OptArg("repository","r", OptArg.STRING, "Specify location of package repository", null),
+			new OptArg("analytics","g", OptArg.STRING, "Specify Google analytics Tracking ID", null)
 	};
 
 	// =======================================================================
@@ -88,6 +89,8 @@ public class Main {
 					repositoryLocation = System.getProperty("user.home") + File.separator + ".whiley" + File.separator + "repository";
 				}
 		}
+		// Extract Google Analytics tracking ID
+		String gaTrackingID = (String) options.get("analytics");
 		// Create the repository root
 		DirectoryRoot repository = new DirectoryRoot(repositoryLocation,REGISTRY);
 		// Determine list of installed packages
@@ -96,7 +99,7 @@ public class Main {
 		String[] deps = determineDefaultDependencies(pkgs,packages);
 		// Attempt to start the web server
 		try {
-			HttpServer server = startWebServer(repositoryLocation, pkgs, deps, timeout);
+			HttpServer server = startWebServer(repositoryLocation, pkgs, deps, timeout, gaTrackingID);
 			server.start();
 			server.awaitTermination(-1, TimeUnit.MILLISECONDS);
 		} catch(Exception e) {
@@ -105,7 +108,7 @@ public class Main {
 	}
 
 
-	public static HttpServer startWebServer(String repository, String[] packages, String[] dependencies, int timeout) throws IOException {
+	public static HttpServer startWebServer(String repository, String[] packages, String[] dependencies, int timeout, String gaTrackingID) throws IOException {
 		// Construct appropriate configuration for socket over which HTTP
 		// server will run.
 		SocketConfig socketConfig = SocketConfig.custom().setSoTimeout(1500).build();
@@ -126,8 +129,8 @@ public class Main {
 						.registerHandler("*.png", new HttpFileHandler(new File("."),IMAGE_PNG))
 						.registerHandler("*.gif", new HttpFileHandler(new File("."),IMAGE_GIF))
 						.registerHandler("/compile", new WhileyWebCompiler(repository, timeout))
-						.registerHandler("/", new FrontPage(packages,dependencies))
-						.registerHandler("*", new HtmlPage())
+						.registerHandler("/", new FrontPage(gaTrackingID,packages,dependencies))
+						.registerHandler("*", new HtmlPage(gaTrackingID))
 						.create();
 				// Attempt to start server
 				server.start();
