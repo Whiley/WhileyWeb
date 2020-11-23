@@ -1,4 +1,4 @@
-<project name="whileyweb" default="compile">
+<project name="whileyweb" default="compile" xmlns:if="ant:if">
   <import file="config.xml"/>
 
   <!-- ================================================================== -->
@@ -36,6 +36,8 @@
         <pathelement path="${JWEBKIT}"/>
         <path refid="MAVEN_DEPS"/>
       </classpath>
+      <arg if:set="ANALYTICS" value="-analytics"/>
+      <arg if:set="ANALYTICS" value="${ANALYTICS}"/>      
     </java>
   </target>
 </project>

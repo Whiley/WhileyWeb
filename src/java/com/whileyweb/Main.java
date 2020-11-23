@@ -91,6 +91,10 @@ public class Main {
 		}
 		// Extract Google Analytics tracking ID
 		String gaTrackingID = (String) options.get("analytics");
+		//
+		if(gaTrackingID != null) {
+			System.out.println("Google analytics enabled (" + gaTrackingID + ")");
+		}
 		// Create the repository root
 		DirectoryRoot repository = new DirectoryRoot(repositoryLocation,REGISTRY);
 		// Determine list of installed packages
