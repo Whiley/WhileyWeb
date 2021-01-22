@@ -95,6 +95,7 @@ public class HtmlPage implements HttpRequestHandler {
 		writer.println("<head>");
 		writer.println("<title>Whiley Labs</title>");
 		writer.println("<link href=\"css/style.css\" rel=\"stylesheet\" type=\"text/css\">");
+		writer.println("<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css\">");
 		writer.println("<script type=\"text/javascript\" src=\"js/ace.js\" charset=\"utf-8\"></script>");
 		writer.println("<script type=\"text/javascript\" src=\"js/mode-whiley.js\"></script>");
 		writer.println("<script type=\"text/javascript\" src=\"js/theme-eclipse.js\"></script>");
@@ -118,11 +119,7 @@ public class HtmlPage implements HttpRequestHandler {
 
 	private void writeBody(PrintStream writer, Map<String, String> parameters) throws SQLException {
 		writer.println("<body>");
-		writer.println("<div id=\"container\">");
-		writer.println("<div id=\"content\">");
 		writeBodyContent(writer, parameters);
-		writer.println("</div>");
-		writer.println("</div>");
 		writer.println("</body>");
 	}
 

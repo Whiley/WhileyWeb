@@ -8,7 +8,7 @@ import js::core with string
 import js::JSON
 import w3c::dom
 // Import elements
-import button,div,img,input,label,option,select from web::html
+import button,div,img,i,input,label,option,select from web::html
 // Import attributes
 import class,click,change,disabled,id,style,tYpe from web::html
 // Import events
@@ -175,21 +175,37 @@ function compile_ready(State s) -> (State sp, Action[] as):
 
 function view(State s) -> Node:
     Node editor = create_editor(s)
-    Node toolbar = create_toolbar(s)
+    Node cmdbar = create_cmdbar(s)
     Node msgbox = create_msgbox(s)
     Node js = create_javascript(s)
+    // Content represents the internal window
+    Node content = div([id("content")],[editor,cmdbar,msgbox,js])
+    // Container is outermost
+    Node window = div([id("window")],content)
+    Node toolbar = create_toolbar(s)
     //
-    return div([editor,toolbar,msgbox,js])
+    return div([id("container")],[toolbar,window])
 
 function create_editor(State s) -> Node:
-    return div([id("code")],"")
+    return div([id("editor")],div([id("code")],""))
 
 final Node LOADING = img([{key:"src",value:"images/loading.gif"}],[""])
 
-/**
- * The toolbar holds the various controls (e.g. for compiling)
- */
 function create_toolbar(State s) -> Node:
+    Node login = create_icon("fa fa-sign-in")
+    Node settings = create_icon("fa fa-cog")
+    Node files = create_icon("fa fa-files-o")
+    Node terminal = create_icon("fa fa-terminal")
+    //
+    return div([id("toolbar")],[login,settings,files,terminal])
+
+function create_icon(string cl) -> Node:
+    return div([class("icon")],i([class(cl)],""))
+
+/**
+ * The cmdbar holds the various controls (e.g. for compiling)
+ */
+function create_cmdbar(State s) -> Node:
     Node l
     Node cb    
     // Construct compile button
@@ -295,10 +311,6 @@ public method configure_editor(dom::Window w):
     // Configure editor
     aceEditor->setTheme("ace/theme/eclipse")
     aceEditor->getSession()->setMode("ace/mode/whiley")
-    // Add event listener for resize events.  This is necessary so
-    // that ACE editor knows when to resize itself.
-    div->addEventListener("mouseup", &(dom::MouseEvent e -> aceEditor->resize(true)))
-    // Done
 
 /**
  * Get the current text stored in the ACE Editor.

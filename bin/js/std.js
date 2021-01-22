@@ -143,7 +143,7 @@ function std$array$replace_first$av1Tav1Tav1T$av1T(items, old, n) {
          return std$array$copy$av1TQ4uintav1TQ4uintQ4uint$av1T(Wy.copy(n), 0, Wy.copy(items), i, old.length);
       } else  {
          let size = (items.length - old.length) + n.length;
-         let nitems = std$array$resize$av1TI$av1T(Wy.copy(items), size);
+         let nitems = std$array$resize$av1TQ4uintv1T$av1T(Wy.copy(items), size, Wy.copy(old[0]));
           {
             const $3 = std$array$copy$av1TQ4uintav1TQ4uintQ4uint$av1T(Wy.copy(n), 0, Wy.copy(nitems), i, n.length);
             nitems = $3;
@@ -192,7 +192,7 @@ function std$array$append$av1Tav1T$av1T(lhs, rhs) {
    if(lhs.length === 0)  {
       return Wy.copy(rhs);
    } else  {
-      let rs = std$array$resize$av1TIv1T$av1T(Wy.copy(lhs), lhs.length + rhs.length, Wy.copy(lhs[0]));
+      let rs = std$array$resize$av1TQ4uintv1T$av1T(Wy.copy(lhs), lhs.length + rhs.length, Wy.copy(lhs[0]));
       return std$array$copy$av1TQ4uintav1TQ4uintQ4uint$av1T(Wy.copy(rhs), 0, Wy.copy(rs), lhs.length, rhs.length);
    }
 }
@@ -212,7 +212,7 @@ function std$array$append$v1Tav1T$av1T(item, items) {
    }
    return Wy.copy(nitems);
 }
-function std$array$resize$av1TI$av1T(src, size) {
+function std$array$resize$av1TQ4uint$av1T(src, size) {
    let result;
    if(src.length === 0)  {
       return Wy.copy(src);
@@ -224,7 +224,7 @@ function std$array$resize$av1TI$av1T(src, size) {
       return Wy.copy(result);
    }
 }
-function std$array$resize$av1TIv1T$av1T(items, size, item) {
+function std$array$resize$av1TQ4uintv1T$av1T(items, size, item) {
    let result;
    let nitems = Wy.array(item, size);
    let i = 0;
@@ -297,7 +297,7 @@ function std$array$filter$av1Tfv1TB$av1T(items, fn) {
          }
       }
    }
-   return std$array$resize$av1TI$av1T(Wy.copy(items), j);
+   return std$array$resize$av1TQ4uint$av1T(Wy.copy(items), j);
 }
 function std$array$foldl$av1Tv1Tf2v1Tv1Tv1T$v1T(items, dEfault, fn) {
    let r;
@@ -515,24 +515,25 @@ function std$ascii$parse_int$Q5ascii6string$u2IN(input) {
 function std$collections$array_set$ArraySet$type(v) {
    return std$array$unique_elements$av1TI$B(Wy.copy(v.items), v.length);
 }
-function std$collections$array_set$ArraySet$V$Q8ArraySet() {
+function std$collections$array_set$ArraySet$V$Q8ArraySettv1T() {
    let r;
    return new Wy.Record({length: 0, items: []});
 }
-function std$collections$array_set$ArraySet$av1T$Q6Vector(items) {
+function std$collections$array_set$ArraySet$av1T$Q6Vectortv1T(items) {
    let r;
-   return std$collections$vector$Vector$av1T$Q6Vector(Wy.copy(items));
+   return std$collections$vector$Vector$av1T$Q6Vectortv1T(Wy.copy(items));
 }
-function std$collections$array_set$insert$Q8ArraySetv1T$Q8ArraySet(set, item) {
+function std$collections$array_set$insert$Q8ArraySettv1Tv1T$Q8ArraySettv1T(set, item) {
    let r;
    if(std$array$contains$av1Tv1TII$B(Wy.copy(set.items), Wy.copy(item), 0, set.length))  {
       return Wy.copy(set);
    } else  {
-      return std$collections$vector$push$Q6Vectorv1T$Q6Vector(Wy.copy(set), Wy.copy(item));
+      return std$collections$vector$push$Q6Vectortv1Tv1T$Q6Vectortv1T(Wy.copy(set), Wy.copy(item));
    }
 }
 function std$collections$hash$hash$I$Q3u32(x) {
-   return x % 4294967295;
+   let _x = x + 2147483648;
+   return _x % 4294967295;
 }
 function std$collections$hash$hash$B$Q3u32(b) {
    if(b)  {
@@ -561,108 +562,108 @@ function std$collections$hash$hash$aB$Q3u32(xs) {
    }
    return r;
 }
-function std$collections$hash_map$HashMap$V$Q7HashMap() {
+function std$collections$hash_map$HashMap$V$Q7HashMaptIv1T() {
    let r;
-   return std$collections$hash_map$HashMap$Q4hash2fn$Q7HashMap(std$collections$hash$hash$I$Q3u32);
+   return std$collections$hash_map$HashMap$Q4hash2fntv1S$Q7HashMaptv1Sv1T(std$collections$hash$hash$I$Q3u32);
 }
-function std$collections$hash_map$HashMap$Q4hash2fn$Q7HashMap(hasher) {
+function std$collections$hash_map$HashMap$Q4hash2fntv1S$Q7HashMaptv1Sv1T(hasher) {
    let r;
-   let init = std$collections$vector$Vector$V$Q6Vector();
+   let init = std$collections$vector$Vector$V$Q6Vectortv1T();
    return new Wy.Record({length: 0, buckets: Wy.array(init, 10), hasher: hasher});
 }
-function std$collections$hash_map$contains$Q7HashMapv1S$B(map, key) {
+function std$collections$hash_map$contains$Q7HashMaptv1Sv1Tv1S$B(map, key) {
    let r;
    let index = map.hasher(Wy.copy(key)) % map.buckets.length;
    let bucket = Wy.copy(map.buckets[index]);
-   for(let i = 0;i < std$collections$vector$size$Q6Vector$I(Wy.copy(bucket));i = i + 1) {
-      let ith = std$collections$vector$get$Q6VectorI$v1T(Wy.copy(bucket), i);
+   for(let i = 0;i < std$collections$vector$size$Q6Vectortv1T$I(Wy.copy(bucket));i = i + 1) {
+      let ith = std$collections$vector$get$Q6Vectortv1TI$v1T(Wy.copy(bucket), i);
       if(Wy.equals(ith.first, key))  {
          return true;
       }
    }
    return false;
 }
-function std$collections$hash_map$get$Q7HashMapv1S$Q6Option(map, key) {
+function std$collections$hash_map$get$Q7HashMaptv1Sv1Tv1S$Q6Optiontv1T(map, key) {
    let r;
    let index = map.hasher(Wy.copy(key)) % map.buckets.length;
    let bucket = Wy.copy(map.buckets[index]);
-   for(let i = 0;i < std$collections$vector$size$Q6Vector$I(Wy.copy(bucket));i = i + 1) {
-      let ith = std$collections$vector$get$Q6VectorI$v1T(Wy.copy(bucket), i);
+   for(let i = 0;i < std$collections$vector$size$Q6Vectortv1T$I(Wy.copy(bucket));i = i + 1) {
+      let ith = std$collections$vector$get$Q6Vectortv1TI$v1T(Wy.copy(bucket), i);
       if(Wy.equals(ith.first, key))  {
-         return std$option$Some$v1T$Q4Some(Wy.copy(ith.second));
+         return std$option$Some$v1T$Q4Sometv1T(Wy.copy(ith.second));
       }
    }
-   return std$option$None$static;
+   return Wy.copy(std$option$None$static);
 }
-function std$collections$hash_map$insert$Q7HashMapv1Sv1T$Q7HashMap(map, key, value) {
+function std$collections$hash_map$insert$Q7HashMaptv1Sv1Tv1Sv1T$Q7HashMaptv1Sv1T(map, key, value) {
    let r;
    let index = map.hasher(Wy.copy(key)) % map.buckets.length;
    let bucket = Wy.copy(map.buckets[index]);
-   for(let i = 0;i < std$collections$vector$size$Q6Vector$I(Wy.copy(bucket));i = i + 1) {
-      let ith = std$collections$vector$get$Q6VectorI$v1T(Wy.copy(bucket), i);
+   for(let i = 0;i < std$collections$vector$size$Q6Vectortv1T$I(Wy.copy(bucket));i = i + 1) {
+      let ith = std$collections$vector$get$Q6Vectortv1TI$v1T(Wy.copy(bucket), i);
       if(Wy.equals(ith.first, key))  {
-         map.buckets[index] = std$collections$vector$set$Q6VectorIv1T$Q6Vector(Wy.copy(bucket), i, std$pair$Pair$v1Sv1T$Q4Pair(Wy.copy(key), Wy.copy(value)));
+         map.buckets[index] = std$collections$vector$set$Q6Vectortv1TIv1T$Q6Vectortv1T(Wy.copy(bucket), i, std$collections$pair$Pair$v1Sv1T$Q4Pairtv1Sv1T(Wy.copy(key), Wy.copy(value)));
          return Wy.copy(map);
       }
    }
-   map.buckets[index] = std$collections$vector$push$Q6Vectorv1T$Q6Vector(Wy.copy(bucket), std$pair$Pair$v1Sv1T$Q4Pair(Wy.copy(key), Wy.copy(value)));
+   map.buckets[index] = std$collections$vector$push$Q6Vectortv1Tv1T$Q6Vectortv1T(Wy.copy(bucket), std$collections$pair$Pair$v1Sv1T$Q4Pairtv1Sv1T(Wy.copy(key), Wy.copy(value)));
     {
       const $29 = map.length + 1;
       map.length = $29;
    }
    return Wy.copy(map);
 }
-function std$collections$hash_map$to_array$Q7HashMap$aQ4Pair(map) {
+function std$collections$hash_map$to_array$Q7HashMaptv1Sv1T$aQ4Pairtv1Sv1T(map) {
    let result;
-   let [b, i] = std$collections$hash_map$advance$Q7HashMapQ4uintQ4uint$Q4uintQ4uint(Wy.copy(map), 0, 0);
+   let [b, i] = std$collections$hash_map$advance$Q7HashMaptv1Sv1TQ4uintQ4uint$Q4uintQ4uint(Wy.copy(map), 0, 0);
    if(b >= map.buckets.length)  {
       return [];
    } else  {
-      let first = std$collections$vector$get$Q6VectorI$v1T(Wy.copy(map.buckets[b]), i);
+      let first = std$collections$vector$get$Q6Vectortv1TI$v1T(Wy.copy(map.buckets[b]), i);
       let items = Wy.array(first, map.length);
       for(let j = 1;j < items.length;j = j + 1) {
           {
-            const $30 = std$collections$hash_map$advance$Q7HashMapQ4uintQ4uint$Q4uintQ4uint(Wy.copy(map), b, i + 1);
+            const $30 = std$collections$hash_map$advance$Q7HashMaptv1Sv1TQ4uintQ4uint$Q4uintQ4uint(Wy.copy(map), b, i + 1);
             b = $30[0];
             i = $30[1];
          }
-         items[j] = std$collections$vector$get$Q6VectorI$v1T(Wy.copy(map.buckets[b]), i);
+         items[j] = std$collections$vector$get$Q6Vectortv1TI$v1T(Wy.copy(map.buckets[b]), i);
       }
       return Wy.copy(items);
    }
 }
-function std$collections$hash_map$iterator$Q7HashMap$Q8Iterator(map) {
-   let [b, i] = std$collections$hash_map$advance$Q7HashMapQ4uintQ4uint$Q4uintQ4uint(Wy.copy(map), 0, 0);
+function std$collections$hash_map$iterator$Q7HashMaptv1Sv1T$Q8IteratortQ4Pairtv1Sv1T(map) {
+   let [b, i] = std$collections$hash_map$advance$Q7HashMaptv1Sv1TQ4uintQ4uint$Q4uintQ4uint(Wy.copy(map), 0, 0);
    return new Wy.Record({get: function(b, map, i) {
       return function() {
-         return std$collections$hash_map$get$Q7HashMapQ4uintQ4uint$Q6Option(Wy.copy(map), b, i);
+         return std$collections$hash_map$get$Q7HashMaptv1Sv1TQ4uintQ4uint$Q6OptiontQ4Pairtv1Sv1T(Wy.copy(map), b, i);
       };
    }(b, map, i), next: function(b, map, i) {
       return function() {
-         return std$collections$hash_map$next$Q7HashMapQ4uintQ4uint$Q8Iterator(Wy.copy(map), b, i);
+         return std$collections$hash_map$next$Q7HashMaptv1Sv1TQ4uintQ4uint$Q8IteratortQ4Pairtv1Sv1T(Wy.copy(map), b, i);
       };
    }(b, map, i)});
 }
-function std$collections$hash_map$get$Q7HashMapQ4uintQ4uint$Q6Option(map, bucket, index) {
+function std$collections$hash_map$get$Q7HashMaptv1Sv1TQ4uintQ4uint$Q6OptiontQ4Pairtv1Sv1T(map, bucket, index) {
    if(bucket < map.buckets.length)  {
-      return std$option$Some$v1T$Q4Some(std$collections$vector$get$Q6VectorI$v1T(Wy.copy(map.buckets[bucket]), index));
+      return std$option$Some$v1T$Q4Sometv1T(std$collections$vector$get$Q6Vectortv1TI$v1T(Wy.copy(map.buckets[bucket]), index));
    } else  {
-      return std$option$None$static;
+      return Wy.copy(std$option$None$static);
    }
 }
-function std$collections$hash_map$next$Q7HashMapQ4uintQ4uint$Q8Iterator(map, bucket, index) {
-   let [b, i] = std$collections$hash_map$advance$Q7HashMapQ4uintQ4uint$Q4uintQ4uint(Wy.copy(map), bucket, index + 1);
+function std$collections$hash_map$next$Q7HashMaptv1Sv1TQ4uintQ4uint$Q8IteratortQ4Pairtv1Sv1T(map, bucket, index) {
+   let [b, i] = std$collections$hash_map$advance$Q7HashMaptv1Sv1TQ4uintQ4uint$Q4uintQ4uint(Wy.copy(map), bucket, index + 1);
    return new Wy.Record({get: function(b, map, i) {
       return function() {
-         return std$collections$hash_map$get$Q7HashMapQ4uintQ4uint$Q6Option(Wy.copy(map), b, i);
+         return std$collections$hash_map$get$Q7HashMaptv1Sv1TQ4uintQ4uint$Q6OptiontQ4Pairtv1Sv1T(Wy.copy(map), b, i);
       };
    }(b, map, i), next: function(b, map, i) {
       return function() {
-         return std$collections$hash_map$next$Q7HashMapQ4uintQ4uint$Q8Iterator(Wy.copy(map), b, i);
+         return std$collections$hash_map$next$Q7HashMaptv1Sv1TQ4uintQ4uint$Q8IteratortQ4Pairtv1Sv1T(Wy.copy(map), b, i);
       };
    }(b, map, i)});
 }
-function std$collections$hash_map$advance$Q7HashMapQ4uintQ4uint$Q4uintQ4uint(map, bucket, index) {
+function std$collections$hash_map$advance$Q7HashMaptv1Sv1TQ4uintQ4uint$Q4uintQ4uint(map, bucket, index) {
    let i;
    let b;
    if(bucket < map.buckets.length)  {
@@ -670,44 +671,61 @@ function std$collections$hash_map$advance$Q7HashMapQ4uintQ4uint$Q4uintQ4uint(map
       if(index < vec.length)  {
          return [bucket, index];
       } else  {
-         return std$collections$hash_map$advance$Q7HashMapQ4uintQ4uint$Q4uintQ4uint(Wy.copy(map), bucket + 1, 0);
+         return std$collections$hash_map$advance$Q7HashMaptv1Sv1TQ4uintQ4uint$Q4uintQ4uint(Wy.copy(map), bucket + 1, 0);
       }
    } else  {
       return [map.buckets.length, 0];
    }
 }
+function std$collections$pair$Pair$v1Sv1T$Q4Pairtv1Sv1T(first, second) {
+   let r;
+   return new Wy.Record({first: Wy.copy(first), second: Wy.copy(second)});
+}
+function std$collections$pair$swap$Q4Pairtv1Sv1T$Q4Pairtv1Tv1S(p) {
+   let r;
+   return new Wy.Record({first: Wy.copy(p.second), second: Wy.copy(p.first)});
+}
+function std$collections$pair$map$Q4Pairtv1Sv1Sfv1Sv1T$Q4Pairtv1Tv1T(pair, fn) {
+   return new Wy.Record({first: fn(Wy.copy(pair.first)), second: fn(Wy.copy(pair.second))});
+}
+function std$collections$pair$map_1st$Q4Pairtv1Sv1Tfv1Sv1U$Q4Pairtv1Uv1T(pair, fn) {
+   return new Wy.Record({first: fn(Wy.copy(pair.first)), second: Wy.copy(pair.second)});
+}
+function std$collections$pair$map_2nd$Q4Pairtv1Sv1Tfv1Tv1U$Q4Pairtv1Sv1U(pair, fn) {
+   return new Wy.Record({first: Wy.copy(pair.first), second: fn(Wy.copy(pair.second))});
+}
 function std$collections$vector$Vector$type($) {
    return $.length <= $.items.length;
 }
-function std$collections$vector$Vector$V$Q6Vector() {
+function std$collections$vector$Vector$V$Q6Vectortv1T() {
    let r;
    return new Wy.Record({items: [], length: 0});
 }
-function std$collections$vector$Vector$av1T$Q6Vector(items) {
+function std$collections$vector$Vector$av1T$Q6Vectortv1T(items) {
    let r;
    return new Wy.Record({items: Wy.copy(items), length: items.length});
 }
-function std$collections$vector$top$Q6Vector$v1T(vec) {
+function std$collections$vector$top$Q6Vectortv1T$v1T(vec) {
    return Wy.copy(vec.items[vec.length - 1]);
 }
-function std$collections$vector$size$Q6Vector$I(vec) {
+function std$collections$vector$size$Q6Vectortv1T$I(vec) {
    let r;
    return vec.length;
 }
-function std$collections$vector$get$Q6VectorI$v1T(vec, ith) {
+function std$collections$vector$get$Q6Vectortv1TI$v1T(vec, ith) {
    let item;
    return Wy.copy(vec.items[ith]);
 }
-function std$collections$vector$to_array$Q6Vector$av1T(vec) {
+function std$collections$vector$to_array$Q6Vectortv1T$av1T(vec) {
    let items;
    return std$array$slice$av1TQ4uintQ4uint$av1T(Wy.copy(vec.items), 0, vec.length);
 }
-function std$collections$vector$push$Q6Vectorv1T$Q6Vector(vec, item) {
+function std$collections$vector$push$Q6Vectortv1Tv1T$Q6Vectortv1T(vec, item) {
    let nvec;
    if(vec.length === vec.items.length)  {
       let nlen = (vec.length * 2) + 1;
        {
-         const $31 = std$array$resize$av1TIv1T$av1T(Wy.copy(vec.items), nlen, Wy.copy(item));
+         const $31 = std$array$resize$av1TQ4uintv1T$av1T(Wy.copy(vec.items), nlen, Wy.copy(item));
          vec.items = $31;
       }
    } else  {
@@ -722,7 +740,7 @@ function std$collections$vector$push$Q6Vectorv1T$Q6Vector(vec, item) {
    }
    return Wy.copy(vec);
 }
-function std$collections$vector$push_all$Q6Vectorav1T$Q6Vector(vec, items) {
+function std$collections$vector$push_all$Q6Vectortv1Tav1T$Q6Vectortv1T(vec, items) {
    let nvec;
    let len = vec.length + items.length;
    if(items.length === 0)  {
@@ -731,7 +749,7 @@ function std$collections$vector$push_all$Q6Vectorav1T$Q6Vector(vec, items) {
       if(len > vec.items.length)  {
          let nlen = (vec.length * 2) + items.length;
           {
-            const $34 = std$array$resize$av1TIv1T$av1T(Wy.copy(vec.items), nlen, Wy.copy(items[0]));
+            const $34 = std$array$resize$av1TQ4uintv1T$av1T(Wy.copy(vec.items), nlen, Wy.copy(items[0]));
             vec.items = $34;
          }
       }
@@ -746,7 +764,7 @@ function std$collections$vector$push_all$Q6Vectorav1T$Q6Vector(vec, items) {
    }
    return Wy.copy(vec);
 }
-function std$collections$vector$pop$Q6Vector$Q6Vector(vec) {
+function std$collections$vector$pop$Q6Vectortv1T$Q6Vectortv1T(vec) {
    let nvec;
     {
       const $37 = vec.length - 1;
@@ -754,17 +772,17 @@ function std$collections$vector$pop$Q6Vector$Q6Vector(vec) {
    }
    return Wy.copy(vec);
 }
-function std$collections$vector$set$Q6VectorIv1T$Q6Vector(vec, ith, item) {
+function std$collections$vector$set$Q6Vectortv1TIv1T$Q6Vectortv1T(vec, ith, item) {
    let result;
    vec.items[ith] = Wy.copy(item);
    return Wy.copy(vec);
 }
-function std$collections$vector$remove$Q6VectorQ4uint$Q6Vector(vec, ith) {
+function std$collections$vector$remove$Q6Vectortv1TQ4uint$Q6Vectortv1T(vec, ith) {
    let result;
    let items = std$array$remove$av1TQ4uint$av1T(Wy.copy(vec.items), ith);
    return new Wy.Record({items: Wy.copy(items), length: vec.length - 1});
 }
-function std$collections$vector$swap$Q6VectorQ4uintQ4uint$Q6Vector(vec, ith, jth) {
+function std$collections$vector$swap$Q6Vectortv1TQ4uintQ4uint$Q6Vectortv1T(vec, ith, jth) {
    let result;
     {
       const $38 = std$array$swap$av1TQ4uintQ4uint$av1T(Wy.copy(vec.items), ith, jth);
@@ -772,12 +790,12 @@ function std$collections$vector$swap$Q6VectorQ4uintQ4uint$Q6Vector(vec, ith, jth
    }
    return Wy.copy(vec);
 }
-function std$collections$vector$clear$Q6Vector$Q6Vector(vec) {
+function std$collections$vector$clear$Q6Vectortv1T$Q6Vectortv1T(vec) {
    let r;
    vec.length = 0;
    return Wy.copy(vec);
 }
-function std$collections$vector$equals$Q6VectorQ6Vector$B(lhs, rhs) {
+function std$collections$vector$equals$Q6Vectortv1TQ6Vectortv1T$B(lhs, rhs) {
    return (lhs.length === rhs.length) && std$array$equals$av1Tav1TII$B(Wy.copy(lhs.items), Wy.copy(rhs.items), 0, lhs.length);
 }
 function std$filesystem$uint$type(x) {
@@ -996,58 +1014,41 @@ function std$option$Some$type($) {
    return true;
 }
 let std$option$None$static = null;
-function std$option$Some$v1T$Q4Some(value) {
+function std$option$Some$v1T$Q4Sometv1T(value) {
    let r;
    return new Wy.Record({value: Wy.copy(value)});
 }
-function std$option$contains$Q6Optionv1T$B(option, value) {
+function std$option$contains$Q6Optiontv1Tv1T$B(option, value) {
    let r;
-   if(is$Q6OptionQ4None(option))  {
+   if(is$Q6Optiontv1TQ4None(option))  {
       return false;
    } else  {
       return Wy.equals(option.value, value);
    }
 }
-function std$option$unwrap$Q6Optionv1T$v1T(option, dEfault) {
+function std$option$unwrap$Q6Optiontv1Tv1T$v1T(option, dEfault) {
    let r;
-   if(is$Q6OptionQ4None(option))  {
+   if(is$Q6Optiontv1TQ4None(option))  {
       return Wy.copy(dEfault);
    } else  {
       return Wy.copy(option.value);
    }
 }
-function std$option$map$Q6Optionfv1Sv1T$Q6Option(option, fn) {
+function std$option$map$Q6Optiontv1Sfv1Sv1T$Q6Optiontv1T(option, fn) {
    let result;
-   if(is$Q6OptionQ4None(option))  {
-      return std$option$None$static;
+   if(is$Q6Optiontv1SQ4None(option))  {
+      return Wy.copy(std$option$None$static);
    } else  {
-      return std$option$Some$v1T$Q4Some(fn(Wy.copy(option.value)));
+      return std$option$Some$v1T$Q4Sometv1T(fn(Wy.copy(option.value)));
    }
 }
-function std$option$filter$Q6Optionfv1TB$Q6Option(option, filter) {
+function std$option$filter$Q6Optiontv1Tfv1TB$Q6Optiontv1T(option, filter) {
    let r;
-   if((!is$Q6OptionQ4None(option)) && filter(Wy.copy(option.value)))  {
+   if((!is$Q6Optiontv1TQ4None(option)) && filter(Wy.copy(option.value)))  {
       return Wy.copy(option);
    } else  {
-      return std$option$None$static;
+      return Wy.copy(std$option$None$static);
    }
-}
-function std$pair$Pair$v1Sv1T$Q4Pair(first, second) {
-   let r;
-   return new Wy.Record({first: Wy.copy(first), second: Wy.copy(second)});
-}
-function std$pair$swap$Q4Pair$Q4Pair(p) {
-   let r;
-   return new Wy.Record({first: Wy.copy(p.second), second: Wy.copy(p.first)});
-}
-function std$pair$map$Q4Pairfv1Sv1T$Q4Pair(pair, fn) {
-   return new Wy.Record({first: fn(Wy.copy(pair.first)), second: fn(Wy.copy(pair.second))});
-}
-function std$pair$map_1st$Q4Pairfv1Sv1U$Q4Pair(pair, fn) {
-   return new Wy.Record({first: fn(Wy.copy(pair.first)), second: Wy.copy(pair.second)});
-}
-function std$pair$map_2nd$Q4Pairfv1Tv1U$Q4Pair(pair, fn) {
-   return new Wy.Record({first: Wy.copy(pair.first), second: fn(Wy.copy(pair.second))});
 }
 function std$utf8$uint$type(x) {
    return x >= 0;
@@ -1128,30 +1129,30 @@ function std$utf8$length$Q6string$Q4uint(str) {
 function is$u2Q4uintNQ4uint(v) {
    return ((typeof v) === "number") && std$integer$uint$type(v);
 }
-function is$Q6OptionQ4None(v) {
+function is$Q6Optiontv1SQ4None(v) {
    return (v === null) && std$option$None$type(v);
 }
-function is$Q6OptionQ4Some(v) {
-   return is$Q6Optionr1v1T5value(v) && std$option$Some$type(v);
+function is$Q6Optiontv1TQ4Sometv1T(v) {
+   return is$Q6Optiontv1Tr1v1T5value(v) && std$option$Some$type(v);
 }
-function is$u2Q4NoneQ4SomeQ4None(v) {
+function is$u2Q4NoneQ4Sometv1SQ4None(v) {
    return (v === null) && std$option$None$type(v);
 }
 function is$u2NQ4uintQ4uint(v) {
    return ((typeof v) === "number") && std$integer$uint$type(v);
 }
-function is$u2Q4NoneQ4SomeQ4None(v) {
+function is$u2Q4NoneQ4Sometv1TQ4None(v) {
    return (v === null) && std$option$None$type(v);
 }
-function is$Q6OptionQ4None(v) {
+function is$Q6Optiontv1TQ4None(v) {
    return (v === null) && std$option$None$type(v);
 }
-function is$Q6OptionQ4Some(v) {
-   return is$Q6Optionr1v1S5value(v) && std$option$Some$type(v);
+function is$Q6Optiontv1SQ4Sometv1S(v) {
+   return is$Q6Optiontv1Sr1v1S5value(v) && std$option$Some$type(v);
 }
-function is$Q6Optionr1v1S5value(v) {
+function is$Q6Optiontv1Sr1v1S5value(v) {
    return true;
 }
-function is$Q6Optionr1v1T5value(v) {
+function is$Q6Optiontv1Tr1v1T5value(v) {
    return true;
 }
