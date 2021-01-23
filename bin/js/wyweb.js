@@ -37,12 +37,12 @@ function wyweb$main$toggle_counterexamples$Q10MouseEventQ5State$Q5StateaQ6Action
    }
    return [Wy.copy(s), []];
 }
-function wyweb$main$toggle_javascript$Q10MouseEventQ5State$Q5StateaQ6Action(e, s) {
+function wyweb$main$toggle_settings$Q10MouseEventQ5State$Q5StateaQ6Action(e, s) {
    let as;
    let sp;
     {
-      const $3 = !s.javascript;
-      s.javascript = $3;
+      const $3 = !s.settings;
+      s.settings = $3;
    }
    return [Wy.copy(s), []];
 }
@@ -129,12 +129,11 @@ function wyweb$main$compile_ready$Q5State$Q5StateaQ6Action(s) {
 function wyweb$main$view$Q5State$Q4Node(s) {
    let editor = wyweb$main$create_editor$Q5State$Q4Node(Wy.copy(s));
    let cmdbar = wyweb$main$create_cmdbar$Q5State$Q4Node(Wy.copy(s));
-   let msgbox = wyweb$main$create_msgbox$Q5State$Q4Node(Wy.copy(s));
-   let js = wyweb$main$create_javascript$Q5State$Q4Node(Wy.copy(s));
-   let content = web$html$div$aQ9Attributetv1SaQ4Nodetv1S$Q4Nodetv1S([web$html$id$Q6string$Q9Attributetv1S("content")], [Wy.copy(editor), Wy.copy(cmdbar), Wy.copy(msgbox), Wy.copy(js)]);
+   let content = web$html$div$aQ9Attributetv1SaQ4Nodetv1S$Q4Nodetv1S([web$html$id$Q6string$Q9Attributetv1S("content")], [Wy.copy(editor), Wy.copy(cmdbar)]);
    let window = web$html$div$aQ9Attributetv1SQ4Nodetv1S$Q4Nodetv1S([web$html$id$Q6string$Q9Attributetv1S("window")], Wy.copy(content));
    let toolbar = wyweb$main$create_toolbar$Q5State$Q4Node(Wy.copy(s));
-   return web$html$div$aQ9Attributetv1SaQ4Nodetv1S$Q4Nodetv1S([web$html$id$Q6string$Q9Attributetv1S("container")], [Wy.copy(toolbar), Wy.copy(window)]);
+   let toolbar_options = wyweb$main$create_toolbar_options$Q5State$Q4Node(Wy.copy(s));
+   return web$html$div$aQ9Attributetv1SaQ4Nodetv1S$Q4Nodetv1S([web$html$id$Q6string$Q9Attributetv1S("container")], [Wy.copy(toolbar), Wy.copy(toolbar_options), Wy.copy(window)]);
 }
 function wyweb$main$create_editor$Q5State$Q4Node(s) {
    return web$html$div$aQ9Attributetv1SQ4Nodetv1S$Q4Nodetv1S([web$html$id$Q6string$Q9Attributetv1S("editor")], web$html$div$aQ9Attributetv1SQ4Nodetv1S$Q4Nodetv1S([web$html$id$Q6string$Q9Attributetv1S("code")], ""));
@@ -142,13 +141,26 @@ function wyweb$main$create_editor$Q5State$Q4Node(s) {
 const wyweb$main$LOADING$static = web$html$img$aQ9Attributetv1SaQ4Nodetv1S$Q4Nodetv1S([new Wy.Record({key: "src", value: "images/loading.gif"})], [""]);
 function wyweb$main$create_toolbar$Q5State$Q4Node(s) {
    let login = wyweb$main$create_icon$Q6string$Q4Node("fa fa-sign-in");
-   let settings = wyweb$main$create_icon$Q6string$Q4Node("fa fa-cog");
+   let settings = wyweb$main$create_icon$Q6stringQ6Toggle$Q4Node("fa fa-cog", wyweb$main$toggle_settings$Q10MouseEventQ5State$Q5StateaQ6Action);
    let files = wyweb$main$create_icon$Q6string$Q4Node("fa fa-files-o");
    let terminal = wyweb$main$create_icon$Q6string$Q4Node("fa fa-terminal");
    return web$html$div$aQ9Attributetv1SaQ4Nodetv1S$Q4Nodetv1S([web$html$id$Q6string$Q9Attributetv1S("toolbar")], [Wy.copy(login), Wy.copy(settings), Wy.copy(files), Wy.copy(terminal)]);
 }
+function wyweb$main$create_toolbar_options$Q5State$Q4Node(s) {
+   if(s.settings)  {
+      let vt = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("Verification", wyweb$main$toggle_verification$Q10MouseEventQ5State$Q5StateaQ6Action);
+      let qt = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("Check", wyweb$main$toggle_check$Q10MouseEventQ5State$Q5StateaQ6Action);
+      let et = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("Counterexamples", wyweb$main$toggle_counterexamples$Q10MouseEventQ5State$Q5StateaQ6Action);
+      return web$html$div$aQ9Attributetv1SaQ4Nodetv1S$Q4Nodetv1S([web$html$id$Q6string$Q9Attributetv1S("toolbar-options")], [web$html$h2$Q4Nodetv1S$Q4Nodetv1S("Verification"), Wy.copy(vt), Wy.copy(qt), Wy.copy(et), web$html$hr$V$Q4Nodetv1S(), web$html$h2$Q4Nodetv1S$Q4Nodetv1S("Packages"), web$html$hr$V$Q4Nodetv1S()]);
+   } else  {
+      return "";
+   }
+}
 function wyweb$main$create_icon$Q6string$Q4Node(cl) {
    return web$html$div$aQ9Attributetv1SQ4Nodetv1S$Q4Nodetv1S([web$html$class$Q6string$Q9Attributetv1S("icon")], web$html$i$aQ9Attributetv1SQ4Nodetv1S$Q4Nodetv1S([web$html$class$Q6string$Q9Attributetv1S(Wy.copy(cl))], ""));
+}
+function wyweb$main$create_icon$Q6stringQ6Toggle$Q4Node(cl, handler) {
+   return web$html$div$aQ9Attributetv1SQ4Nodetv1S$Q4Nodetv1S([web$html$class$Q6string$Q9Attributetv1S("icon"), web$html$click$Q7handlertQ10MouseEventv1S$Q9Attributetv1S(handler)], web$html$i$aQ9Attributetv1SQ4Nodetv1S$Q4Nodetv1S([web$html$class$Q6string$Q9Attributetv1S(Wy.copy(cl))], ""));
 }
 function wyweb$main$create_cmdbar$Q5State$Q4Node(s) {
    let l;
@@ -168,19 +180,14 @@ function wyweb$main$create_cmdbar$Q5State$Q4Node(s) {
          break;
       }
    }
-   let vt = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("Verification", wyweb$main$toggle_verification$Q10MouseEventQ5State$Q5StateaQ6Action);
-   let qt = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("Check", wyweb$main$toggle_check$Q10MouseEventQ5State$Q5StateaQ6Action);
-   let et = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("Counterexamples", wyweb$main$toggle_counterexamples$Q10MouseEventQ5State$Q5StateaQ6Action);
-   let jt = wyweb$main$toggle$Q6stringQ6Toggle$Q4Node("JavaScript", wyweb$main$toggle_javascript$Q10MouseEventQ5State$Q5StateaQ6Action);
-   let cf = web$html$div$aQ9Attributetv1SaQ4Nodetv1S$Q4Nodetv1S([web$html$id$Q6string$Q9Attributetv1S("configbar")], [Wy.copy(vt), Wy.copy(qt), Wy.copy(et), Wy.copy(jt)]);
-   let el = web$html$div$aQ9Attributetv1SQ4Nodetv1S$Q4Nodetv1S([web$html$id$Q6string$Q9Attributetv1S("elastic")], "");
+   let msgbox = wyweb$main$create_msgbox$Q5State$Q4Node(Wy.copy(s));
    let egs = wyweb$main$create_examples$aQ6stringQ6Toggle$Q4Node(Wy.copy(wyweb$main$EG_NAMES$static), wyweb$main$load_example$Q10MouseEventQ5State$Q5StateaQ6Action);
-   return web$html$div$aQ9Attributetv1SaQ4Nodetv1S$Q4Nodetv1S([web$html$id$Q6string$Q9Attributetv1S("cmdbar")], [Wy.copy(cb), Wy.copy(cf), Wy.copy(l), Wy.copy(el), Wy.copy(egs)]);
+   return web$html$div$aQ9Attributetv1SaQ4Nodetv1S$Q4Nodetv1S([web$html$id$Q6string$Q9Attributetv1S("cmdbar")], [Wy.copy(cb), Wy.copy(l), Wy.copy(msgbox), Wy.copy(egs)]);
 }
 function wyweb$main$toggle$Q6stringQ6Toggle$Q4Node(lab, onclick) {
    let t = web$html$input$aQ9Attributetv1SaQ4Nodetv1S$Q4Nodetv1S([new Wy.Record({key: "type", value: "checkbox"}), web$html$click$Q7handlertQ10MouseEventv1S$Q9Attributetv1S(onclick)], [""]);
    let l = web$html$label$Q4Nodetv1S$Q4Nodetv1S(Wy.copy(lab));
-   return web$html$div$aQ9Attributetv1SaQ4Nodetv1S$Q4Nodetv1S([web$html$style$Q6string$Q9Attributetv1S("display: inline;")], [Wy.copy(t), Wy.copy(l)]);
+   return web$html$div$aQ9Attributetv1SaQ4Nodetv1S$Q4Nodetv1S([web$html$class$Q6string$Q9Attributetv1S("toolbar-options-toggle")], [Wy.copy(t), Wy.copy(l)]);
 }
 function wyweb$main$create_examples$aQ6stringQ6Toggle$Q4Node(labels, onchange) {
    let children = Wy.array("", labels.length);
@@ -207,15 +214,8 @@ function wyweb$main$create_msgbox$Q5State$Q4Node(s) {
    }
    return web$html$div$aQ9Attributetv1SaQ4Nodetv1S$Q4Nodetv1S([web$html$id$Q6string$Q9Attributetv1S("messages")], [Wy.copy(contents)]);
 }
-function wyweb$main$create_javascript$Q5State$Q4Node(s) {
-   if(s.javascript)  {
-      return web$html$div$aQ9Attributetv1SQ4Nodetv1S$Q4Nodetv1S([web$html$id$Q6string$Q9Attributetv1S("bin")], Wy.copy(s.binary));
-   } else  {
-      return web$html$div$Q4Nodetv1S$Q4Nodetv1S("");
-   }
-}
 function wyweb$main$run(root, window, deps) {
-   let state = new Wy.Record({state: wyweb$main$READY$static, verification: false, check: false, counterexamples: false, javascript: false, binary: "binary", output: "output", error: "", dependencies: Wy.copy(deps), markers: []});
+   let state = new Wy.Record({state: wyweb$main$READY$static, verification: false, check: false, counterexamples: false, settings: false, binary: "binary", output: "output", error: "", dependencies: Wy.copy(deps), markers: []});
    let app = new Wy.Record({model: Wy.copy(state), view: wyweb$main$view$Q5State$Q4Node});
    web$app$run(Wy.copy(app), root, window);
    wyweb$main$configure_editor$Q3dom6Window$V(window);

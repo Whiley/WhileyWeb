@@ -28,14 +28,27 @@ body {
 }
 
 #toolbar {
+    flex-grow: 0;    
     background: #483c1e;
+    color: #91773b;    
     border-right: 2px solid black;
 }
 
-.icon {
+#toolbar-options {
     flex-grow: 0;
+    padding: 1em;
+    background: #7f6934;
+    color: #ffffff;        
+    border-right: 2px solid black;
+}
+
+.toolbar-options-toggle {
+    display: inline-block;
+    width: 100%;
+}
+
+.icon {
     margin: 10px;
-    color: #91773b;
     font-size: 32pt;
 }
 
@@ -58,7 +71,7 @@ body {
 #content {
     margin: 0em;
     padding: 0em;
-    height: calc(100% - 6em);
+    height: calc(100% - 3em);
     font-family: 'Pontano Sans', Verdana, Helvetica, sans-serif;
     font-size: 16pt;
 }
@@ -109,6 +122,7 @@ body {
 }
 
 #messages {
+    flex-grow: 1;    
     margin: 0.5em 0em;
 }
 
@@ -209,10 +223,6 @@ nav.menubar > ul > li > ul a {
     opacity: 0.6;
     cursor: not-allowed;
     color: #888888;    
-}
-
-#elastic {
-    flex-grow: 1;    
 }
 
 /**

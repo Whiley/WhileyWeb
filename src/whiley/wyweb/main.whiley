@@ -8,7 +8,7 @@ import js::core with string
 import js::JSON
 import w3c::dom
 // Import elements
-import button,div,img,i,input,label,option,select from web::html
+import button,div,img,i,h2,hr,input,label,option,select from web::html
 // Import attributes
 import class,click,change,disabled,id,style,tYpe from web::html
 // Import events
@@ -58,7 +58,7 @@ public type State is {
     bool verification,
     bool check,
     bool counterexamples,
-    bool javascript,
+    bool settings,
     string[] dependencies,
     uint[] markers
 }
@@ -75,8 +75,8 @@ function toggle_counterexamples(MouseEvent e, State s) -> (State sp, Action[] as
     s.counterexamples = !s.counterexamples
     return s,[]
 
-function toggle_javascript(MouseEvent e, State s) -> (State sp, Action[] as):
-    s.javascript = !s.javascript
+function toggle_settings(MouseEvent e, State s) -> (State sp, Action[] as):
+    s.settings = !s.settings
     return s,[]
 
 function load_example(MouseEvent e, State s) -> (State sp, Action[] as):
@@ -176,15 +176,14 @@ function compile_ready(State s) -> (State sp, Action[] as):
 function view(State s) -> Node:
     Node editor = create_editor(s)
     Node cmdbar = create_cmdbar(s)
-    Node msgbox = create_msgbox(s)
-    Node js = create_javascript(s)
     // Content represents the internal window
-    Node content = div([id("content")],[editor,cmdbar,msgbox,js])
+    Node content = div([id("content")],[editor,cmdbar])
     // Container is outermost
     Node window = div([id("window")],content)
     Node toolbar = create_toolbar(s)
+    Node toolbar_options = create_toolbar_options(s)    
     //
-    return div([id("container")],[toolbar,window])
+    return div([id("container")],[toolbar,toolbar_options,window])
 
 function create_editor(State s) -> Node:
     return div([id("editor")],div([id("code")],""))
@@ -193,14 +192,30 @@ final Node LOADING = img([{key:"src",value:"images/loading.gif"}],[""])
 
 function create_toolbar(State s) -> Node:
     Node login = create_icon("fa fa-sign-in")
-    Node settings = create_icon("fa fa-cog")
+    Node settings = create_icon("fa fa-cog",&toggle_settings)
     Node files = create_icon("fa fa-files-o")
     Node terminal = create_icon("fa fa-terminal")
     //
     return div([id("toolbar")],[login,settings,files,terminal])
 
+function create_toolbar_options(State s) -> Node:
+    if s.settings:
+        // Construct toggles        
+        Node vt = toggle("Verification", &toggle_verification)
+        Node qt = toggle("Check", &toggle_check)
+        Node et = toggle("Counterexamples", &toggle_counterexamples)
+        // Done
+        return div([id("toolbar-options")],[
+            h2("Verification"),vt,qt,et,hr(),
+            h2("Packages"),hr()])
+    else:
+        return ""
+    
 function create_icon(string cl) -> Node:
     return div([class("icon")],i([class(cl)],""))
+
+function create_icon(string cl, Toggle handler) -> Node:
+    return div([class("icon"),click(handler)],i([class(cl)],""))
 
 /**
  * The cmdbar holds the various controls (e.g. for compiling)
@@ -216,24 +231,18 @@ function create_cmdbar(State s) -> Node:
         default:
           cb = button([click(&compile_clicked),disabled()],"Compile")
           l = LOADING
-    // Construct toggles
-    Node vt = toggle("Verification", &toggle_verification)
-    Node qt = toggle("Check", &toggle_check)
-    Node et = toggle("Counterexamples", &toggle_counterexamples)
-    Node jt = toggle("JavaScript", &toggle_javascript)
-    Node cf = div([id("configbar")],[vt,qt,et,jt])
-    // Construct elastic
-    Node el = div([id("elastic")],"")
+    // Construct reporting area
+    Node msgbox = create_msgbox(s)    
     // Construct examples selection
     Node egs = create_examples(EG_NAMES,&load_example)
     //
-    return div([id("cmdbar")],[cb,cf,l,el,egs])
+    return div([id("cmdbar")],[cb,l,msgbox,egs])
 
 function toggle(string lab, Toggle onclick) -> Node:
     Node t = input([{key:"type",value:"checkbox"},click(onclick)],[""])
     Node l = label(lab)
     // Done
-    return div([style("display: inline;")],[t,l])
+    return div([class("toolbar-options-toggle")],[t,l])
 
 function create_examples(string[] labels, Toggle onchange) -> Node:
     Node[] children = ["";|labels|]
@@ -259,15 +268,6 @@ function create_msgbox(State s) -> Node:
     //
     return div([id("messages")],[contents])
 
-/**
- * Provides the generated JavaScript
- */
-function create_javascript(State s) -> Node:
-    if s.javascript:
-        return div([id("bin")],s.binary)
-    else:
-        return div("")
-
 // =========================================
 // Controller
 // =========================================
@@ -279,7 +279,7 @@ public export method run(dom::Node root, dom::Window window, string[] deps):
         verification: false,
         check: false,
         counterexamples: false,
-        javascript: false,
+        settings: false,
         binary: "binary",
         output: "output",
         error: "",
