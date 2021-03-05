@@ -1,6 +1,7 @@
 package com.whileyweb;
 
 import static wyc.Activator.WHILEY_PLATFORM;
+import static wyboogie.Activator.BOOGIE_PLATFORM;
 import static wyjs.Activator.JS_PLATFORM;
 
 import java.io.BufferedReader;
@@ -88,6 +89,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 			TEMPORARY_SCHEMA,
 			WyMain.LOCAL_CONFIG_SCHEMA,
 			WHILEY_PLATFORM.getConfigurationSchema(),
+			BOOGIE_PLATFORM.getConfigurationSchema(),
 			JS_PLATFORM.getConfigurationSchema(),
 			QuickCheck.DESCRIPTOR.getConfigurationSchema());
 
@@ -177,9 +179,10 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		// Write default package name
 		configuration.write(Activator.PKGNAME_CONFIG_OPTION,new Value.UTF8("main"));
 		//
-		if(verification) {
-			configuration.write(Activator.VERIFY_CONFIG_OPTION, new Value.Bool(true));
-		}
+//		internal verification is disabled for now
+//		if(verification) {
+//			configuration.write(Activator.VERIFY_CONFIG_OPTION, new Value.Bool(true));
+//		}
 		if(counterexamples) {
 			configuration.write(Activator.COUNTEREXAMPLE_CONFIG_OPTION, new Value.Bool(true));
 		}
@@ -187,6 +190,10 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		Command.Project project = new CommandProject(localRoot,configuration);
 		// Initialise the whiley platform
 		WHILEY_PLATFORM.initialise(configuration, project);
+		if(verification) {
+			// Initialise Boogie if we want to run verification.
+			BOOGIE_PLATFORM.initialise(configuration, project);
+		}
 		JS_PLATFORM.initialise(configuration, project);
 		// Refresh system state
 		//
@@ -235,7 +242,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 				result.put("result", "success");
 			}
 		} catch (Exception e) {
-			//e.printStackTrace();
+			// e.printStackTrace();
 			// Some kind of internal failure has occurred, so simply report this.
 			result.put("result", "exception");
 			result.put("text", e.getMessage());

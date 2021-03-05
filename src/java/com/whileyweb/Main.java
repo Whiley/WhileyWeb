@@ -99,6 +99,7 @@ public class Main {
 		DirectoryRoot repository = new DirectoryRoot(repositoryLocation,REGISTRY);
 		// Determine list of installed packages
 		String[] pkgs = determineInstalledPackages(repository);
+		System.out.println("GOT: " + Arrays.toString(packages));
 		// Determine default configure deps
 		String[] deps = determineDefaultDependencies(pkgs,packages);
 		// Attempt to start the web server
