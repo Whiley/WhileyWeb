@@ -1,19 +1,28 @@
 package com.whileyweb;
 
 import static wyc.Activator.WHILEY_PLATFORM;
+import static wyboogie.Activator.BOOGIE_PLATFORM;
 import static wyjs.Activator.JS_PLATFORM;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import com.whileyweb.util.ProcessTimerMethod;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.http.HttpEntity;
@@ -22,15 +31,20 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
+import org.apache.http.ParseException;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
 
 import jwebkit.http.HttpMethodDispatchHandler;
 import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
+import wybs.lang.Build.Meter;
 import wybs.util.AbstractCompilationUnit;
+import wybs.util.Logger;
 import wybs.util.AbstractCompilationUnit.Attribute;
 import wybs.util.AbstractCompilationUnit.Attribute.Span;
 import wybs.util.AbstractCompilationUnit.Value;
@@ -38,68 +52,114 @@ import wybs.util.SequentialBuildProject;
 import wyc.Activator;
 import wyc.cmd.QuickCheck;
 import wyc.lang.WhileyFile;
-import wycc.WyMain;
-import wycc.cfg.ConfigFile;
-import wycc.cfg.Configuration;
-import wycc.cfg.HashMapConfiguration;
-import wycc.util.Pair;
+import wycli.WyMain;
+import wycli.cfg.ConfigFile;
+import wycli.cfg.Configuration;
+import wycli.cfg.HashMapConfiguration;
+import wycli.cfg.Configuration.Schema;
+import wycli.lang.Command;
+import wycli.lang.Command.Environment;
+import wycli.lang.Package.Resolver;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.lang.Content.Registry;
+import wyfs.lang.Path.Filter;
+import wyfs.lang.Path.ID;
+import wyfs.lang.Path.Root;
 import wyfs.util.DirectoryRoot;
+import wyfs.util.Pair;
 import wyfs.util.Trie;
 import wyfs.util.VirtualRoot;
 import wyfs.util.ZipFile;
 import wyfs.util.ZipFileRoot;
 import wyil.lang.WyilFile;
-import wyil.lang.WyilFile.SyntaxError;
+import wyil.lang.WyilFile.Attr.SyntaxError;
 import wyjs.core.JavaScriptFile;
 import wyjs.io.JavaScriptFilePrinter;
 
 public class WhileyWebCompiler extends HttpMethodDispatchHandler {
+
+	// Have no idea why this is needed.
+	public static Configuration.Schema TEMPORARY_SCHEMA = Configuration.fromArray(
+			Configuration.UNBOUND_STRING(Activator.PKGNAME_CONFIG_OPTION, "list of globally installed plugins", true));
+
+
 	// Construct the configuration schema.
-	private final static Configuration.Schema SCHEMA = Configuration.toCombinedSchema(WyMain.LOCAL_CONFIG_SCHEMA,
-			WHILEY_PLATFORM.getConfigurationSchema(), JS_PLATFORM.getConfigurationSchema(),
+	private final static Configuration.Schema SCHEMA = Configuration.toCombinedSchema(
+			TEMPORARY_SCHEMA,
+			WyMain.LOCAL_CONFIG_SCHEMA,
+			WHILEY_PLATFORM.getConfigurationSchema(),
+			BOOGIE_PLATFORM.getConfigurationSchema(),
+			JS_PLATFORM.getConfigurationSchema(),
 			QuickCheck.DESCRIPTOR.getConfigurationSchema());
 
-	private final Content.Registry registry;
-	private final Path.Root repository;
+	private final int timeout;
+	private final String repository;
+	private final boolean boogie;
 
-	public WhileyWebCompiler(Content.Registry registry, Path.Root repository) throws IOException {
+	public WhileyWebCompiler(String repository, int timeout, boolean boogie) throws IOException {
 		super(HttpMethodDispatchHandler.ALLOW_POST);
-		this.registry = registry;
 		this.repository = repository;
+		this.timeout = timeout;
+		this.boogie = boogie;
 	}
 
 	@Override
 	public void post(HttpRequest request, HttpResponse response, HttpContext context)
 			throws HttpException, IOException {
 		HttpEntity entity = checkHasEntity(request);
-		List<NameValuePair> params = URLEncodedUtils.parse(entity);
-		String code = null;
-		boolean verification = false;
-		boolean counterexamples = false;
-		boolean quickcheck = false;
-		ArrayList<String> dependencies = new ArrayList<>();
-		for (NameValuePair p : params) {
-			if (p.getName().equals("code")) {
-				code = p.getValue();
-			} else if (p.getName().equals("verify")) {
-				verification = Boolean.parseBoolean(p.getValue());
-			} else if (p.getName().equals("counterexamples")) {
-				counterexamples = Boolean.parseBoolean(p.getValue());
-			} else if (p.getName().equals("quickcheck")) {
-				quickcheck = Boolean.parseBoolean(p.getValue());
-			} else if(p.getName().equals("dependency[]")) {
-				dependencies.add(p.getValue());
+		try {
+			// Parse compile request
+			JSONObject json = new JSONObject(EntityUtils.toString(entity));
+			// Extract key fields
+			String code = json.getString("code");
+			boolean verification = json.getBoolean("verify");
+			boolean counterexamples = json.getBoolean("counterexamples");
+			boolean quickcheck = json.getBoolean("quickcheck");
+			String[] dependencies = toStringArray(json.getJSONArray("dependencies"));
+			// Run the build
+			try {
+				// NOTE: we use ProcessTimeMethod here to ensure that a proper
+				// timeout can be enforced. This is not the ideal way to do
+				// this, but for now it works.
+				ProcessTimerMethod.Outcome result = ProcessTimerMethod.exec(timeout, this.getClass().getCanonicalName(),
+						"compile", repository, code, verification, counterexamples, quickcheck, boogie, dependencies);
+				//
+				if (result.exitCode() != null) {
+					String reply = result.getReturnAs(String.class);
+					// Configure response
+					response.setEntity(new StringEntity(reply)); // ContentType.APPLICATION_JSON fails?
+					response.setStatusCode(HttpStatus.SC_OK);
+					// Done
+					return;
+				} else {
+					errorResponse(response, "timeout");
+					return;
+				}
+			} catch (Throwable e) {
+				e.printStackTrace();
+				errorResponse(response, "internal failure (" + e.getMessage() + ")");
+				return;
 			}
+		} catch (ParseException e) {
+		} catch (JSONException e) {
+		} catch (IOException e) {
 		}
-		if (code == null) {
-			response.setStatusCode(HttpStatus.SC_BAD_REQUEST);
-		} else {
-			String r = compile(code, verification, counterexamples, quickcheck, dependencies.toArray(new String[dependencies.size()]));
-			response.setEntity(new StringEntity(r)); // ContentType.APPLICATION_JSON fails?
-			response.setStatusCode(HttpStatus.SC_OK);
+		// Malformed Request
+		response.setStatusCode(HttpStatus.SC_BAD_REQUEST);
+	}
+
+	private void errorResponse(HttpResponse response, String msg) {
+		HashMap<String, Object> result = new HashMap<>();
+		result.put("result", "exception");
+		result.put("text", msg);
+		String r = toJsonString(result);
+		try {
+			response.setEntity(new StringEntity(r));
+		} catch (UnsupportedEncodingException e) {
+
 		}
+		response.setStatusCode(HttpStatus.SC_OK);
 	}
 
 	private HttpEntity checkHasEntity(HttpRequest request) throws HttpException {
@@ -111,23 +171,31 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		}
 	}
 
-	private String compile(String code, boolean verification, boolean counterexamples, boolean quickcheck, String[] dependencies)
+	public static String compile(String repositoryLocation, String code, boolean verification, boolean counterexamples, boolean quickcheck, boolean boogie, String[] dependencies)
 			throws IOException, HttpException {
+		DirectoryRoot repository = new DirectoryRoot(repositoryLocation,Main.REGISTRY);
 		// Determine project directory
-		Path.Root localRoot = new VirtualRoot(registry);
+		Path.Root localRoot = new VirtualRoot(Main.REGISTRY);
 		// Read the configuration schema
 		HashMapConfiguration configuration = new HashMapConfiguration(SCHEMA);
+		// Write default package name
+		configuration.write(Activator.PKGNAME_CONFIG_OPTION,new Value.UTF8("main"));
 		//
-		if(verification) {
+		if(!boogie && verification) {
+			// Activate internal verification *only* if boogie is not available!
 			configuration.write(Activator.VERIFY_CONFIG_OPTION, new Value.Bool(true));
 		}
 		if(counterexamples) {
 			configuration.write(Activator.COUNTEREXAMPLE_CONFIG_OPTION, new Value.Bool(true));
 		}
 		// Construct environment and execute arguments
-		Build.Project project = new SequentialBuildProject(localRoot);
+		Command.Project project = new CommandProject(localRoot,configuration);
 		// Initialise the whiley platform
 		WHILEY_PLATFORM.initialise(configuration, project);
+		if(boogie && verification) {
+			// Initialise Boogie (if applicable) and we want verification.
+			BOOGIE_PLATFORM.initialise(configuration, project);
+		}
 		JS_PLATFORM.initialise(configuration, project);
 		// Refresh system state
 		//
@@ -148,17 +216,18 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		HashMap<String, Object> result = new HashMap<>();
 		try {
 			// Resolve package dependencies
-			List<Build.Package> pkgs = resolvePackageDependencies(repository, SCHEMA, registry, dependencies);
+			List<Build.Package> pkgs = resolvePackageDependencies(repository, SCHEMA, Main.REGISTRY, dependencies);
 			project.getPackages().addAll(pkgs);
 			//
-			boolean ok = project.build(ForkJoinPool.commonPool()).get();
+			boolean ok = project.build(ForkJoinPool.commonPool(), Build.NULL_METER).get();
 			// Extract the binary file
 			Path.Entry<WyilFile> binFile = root.get(binID, WyilFile.ContentType);
 			WyilFile binary = binFile.read();
 			// Perform quickcheck testing!
 			if(ok && quickcheck) {
 				QuickCheck.Context context = QuickCheck.DEFAULT_CONTEXT;
-				ok = new QuickCheck(project, null, System.out, System.err).check(binary, context);
+				ok = new QuickCheck(Logger.NULL, System.out, System.err).check(project, binary, context,
+						Collections.EMPTY_LIST);
 			}
 			// Flush everything to disk
 			root.flush();
@@ -175,7 +244,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 				result.put("result", "success");
 			}
 		} catch (Exception e) {
-			//e.printStackTrace();
+			// e.printStackTrace();
 			// Some kind of internal failure has occurred, so simply report this.
 			result.put("result", "exception");
 			result.put("text", e.getMessage());
@@ -186,6 +255,14 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 	// ==================================================================
 	// Helpers
 	// ==================================================================
+
+	public String[] toStringArray(JSONArray arr) throws JSONException {
+		String[] items = new String[arr.length()];
+		for(int i=0;i!=items.length;++i) {
+			items[i] = arr.getString(i);
+		}
+		return items;
+	}
 
 	/**
 	 * Add any declared dependencies to the set of project roots. The challenge here
@@ -218,7 +295,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 				} else {
 					ConfigFile pkgcfg = pkgRoot.get(Trie.fromString("wy"), ConfigFile.ContentType).read();
 					// Construct a package representation of this root.
-					Build.Package pkg = new Package(pkgRoot, pkgcfg.toConfiguration(schema));
+					Build.Package pkg = new Package(pkgRoot, pkgcfg.toConfiguration(schema, false));
 					// Add a relative ZipFile root
 					packages.add(pkg);
 				}
@@ -226,6 +303,123 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		}
 		//
 		return packages;
+	}
+
+	/**
+	 * Yes, this class is a complete hack which needs to be replaced in the VERY
+	 * near future.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	private static class CommandProject extends SequentialBuildProject implements Command.Project {
+		private final Configuration configuration;
+		public CommandProject(Path.Root root, Configuration configuration) {
+			super(root);
+			this.configuration = configuration;
+		}
+
+		@Override
+		public Schema getConfigurationSchema() {
+			return configuration.getConfigurationSchema();
+		}
+
+		@Override
+		public <T> boolean hasKey(ID key) {
+			return configuration.hasKey(key);
+		}
+
+		@Override
+		public <T> T get(Class<T> kind, ID key) {
+			return configuration.get(kind, key);
+		}
+
+		@Override
+		public <T> void write(ID key, T value) {
+			configuration.write(key, value);
+		}
+
+		@Override
+		public List<ID> matchAll(Filter filter) {
+			return configuration.matchAll(filter);
+		}
+
+		@Override
+		public Environment getEnvironment() {
+			return new Command.Environment() {
+
+				@Override
+				public <T> void write(ID key, T value) {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public List<ID> matchAll(Filter filter) {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public <T> boolean hasKey(ID key) {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public Schema getConfigurationSchema() {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public <T> T get(Class<T> kind, ID key) {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public Root getRoot() {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public List<wybs.lang.Build.Project> getProjects() {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public Resolver getPackageResolver() {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public Meter getMeter() {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public Logger getLogger() {
+					return Logger.NULL;
+				}
+
+				@Override
+				public ExecutorService getExecutor() {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public Registry getContentRegistry() {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public List<Command.Descriptor> getCommandDescriptors() {
+					throw new UnsupportedOperationException();
+				}
+
+				@Override
+				public List<Command.Platform> getBuildPlatforms() {
+					throw new UnsupportedOperationException();
+				}
+			};
+		}
+
 	}
 
 	private static class Package implements Build.Package {
@@ -238,13 +432,13 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		}
 
 		@Override
-		public Configuration getConfiguration() {
-			return configuration;
+		public Path.Root getRoot() {
+			return root;
 		}
 
 		@Override
-		public Path.Root getRoot() {
-			return root;
+		public <T extends Value> T get(Class<T> kind, Trie key) {
+			return configuration.get(kind, key);
 		}
 	}
 
