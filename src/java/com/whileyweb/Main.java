@@ -17,11 +17,13 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.impl.bootstrap.HttpServer;
 import org.apache.http.impl.bootstrap.ServerBootstrap;
 
-import com.whileyweb.pages.FrontPage;
-import com.whileyweb.util.HtmlPage;
+import com.whileyweb.pages.*;
+import com.whileyweb.util.*;
 
 import com.whileyweb.util.OptArg;
 import jwebkit.http.HttpFileHandler;
+import wyboogie.core.BoogieFile;
+import wyboogie.util.Boogie;
 import wyc.lang.WhileyFile;
 import wycli.cfg.ConfigFile;
 import wycli.lang.SemanticVersion;
@@ -99,12 +101,13 @@ public class Main {
 		DirectoryRoot repository = new DirectoryRoot(repositoryLocation,REGISTRY);
 		// Determine list of installed packages
 		String[] pkgs = determineInstalledPackages(repository);
-		System.out.println("GOT: " + Arrays.toString(packages));
 		// Determine default configure deps
 		String[] deps = determineDefaultDependencies(pkgs,packages);
 		// Attempt to start the web server
+		boolean boogie = determineBoogieAvailable();
+
 		try {
-			HttpServer server = startWebServer(repositoryLocation, pkgs, deps, timeout, gaTrackingID);
+			HttpServer server = startWebServer(repositoryLocation, pkgs, deps, timeout, boogie, gaTrackingID);
 			server.start();
 			server.awaitTermination(-1, TimeUnit.MILLISECONDS);
 		} catch(Exception e) {
@@ -113,7 +116,7 @@ public class Main {
 	}
 
 
-	public static HttpServer startWebServer(String repository, String[] packages, String[] dependencies, int timeout, String gaTrackingID) throws IOException {
+	public static HttpServer startWebServer(String repository, String[] packages, String[] dependencies, int timeout, boolean boogie, String gaTrackingID) throws IOException {
 		// Construct appropriate configuration for socket over which HTTP
 		// server will run.
 		SocketConfig socketConfig = SocketConfig.custom().setSoTimeout(1500).build();
@@ -133,7 +136,7 @@ public class Main {
 						.registerHandler("/bin/js/*", new HttpFileHandler(new File("."),TEXT_JAVASCRIPT))
 						.registerHandler("*.png", new HttpFileHandler(new File("."),IMAGE_PNG))
 						.registerHandler("*.gif", new HttpFileHandler(new File("."),IMAGE_GIF))
-						.registerHandler("/compile", new WhileyWebCompiler(repository, timeout))
+						.registerHandler("/compile", new WhileyWebCompiler(repository, timeout, boogie))
 						.registerHandler("/", new FrontPage(gaTrackingID,packages,dependencies))
 						.registerHandler("*", new HtmlPage(gaTrackingID))
 						.create();
@@ -172,7 +175,7 @@ public class Main {
 			}
 
 		}
-		System.out.println("Found " + results.size() + " matching dependencies.");
+		System.out.println("Found " + results.size() + " matching dependencies: " + results);
 		return results.toArray(new String[results.size()]);
 	}
 
@@ -199,7 +202,28 @@ public class Main {
 		for(int i=0;i!=pkgs.size();++i) {
 			items[i] = pkgs.get(i).id().toString();
 		}
-		System.out.println("Found " + items.length + " installed packages.");
+		System.out.println("Found " + items.length + " installed packages: " + Arrays.toString(items));
 		return items;
     }
+
+    private static boolean determineBoogieAvailable() {
+		// Create dummy boogie file
+		BoogieFile bf = new BoogieFile();
+		boolean response;
+		//
+		try {
+			Boogie.Message[] errors = new Boogie().check(10, "test", bf);
+			// Should produce no errors
+			if(errors == null) {
+				System.out.println("Boogie was detected!");
+				return true;
+			} else {
+				System.out.println("Boogie was not detected (" + errors.length + " errors)");
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+			System.out.println("Boogie was not detected (" + e.getClass().getSimpleName() + ")");
+		}
+		return false;
+	}
 }

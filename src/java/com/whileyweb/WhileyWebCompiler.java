@@ -95,11 +95,13 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 
 	private final int timeout;
 	private final String repository;
+	private final boolean boogie;
 
-	public WhileyWebCompiler(String repository, int timeout) throws IOException {
+	public WhileyWebCompiler(String repository, int timeout, boolean boogie) throws IOException {
 		super(HttpMethodDispatchHandler.ALLOW_POST);
 		this.repository = repository;
 		this.timeout = timeout;
+		this.boogie = boogie;
 	}
 
 	@Override
@@ -121,7 +123,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 				// timeout can be enforced. This is not the ideal way to do
 				// this, but for now it works.
 				ProcessTimerMethod.Outcome result = ProcessTimerMethod.exec(timeout, this.getClass().getCanonicalName(),
-						"compile", repository, code, verification, counterexamples, quickcheck, dependencies);
+						"compile", repository, code, verification, counterexamples, quickcheck, boogie, dependencies);
 				//
 				if (result.exitCode() != null) {
 					String reply = result.getReturnAs(String.class);
@@ -169,7 +171,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		}
 	}
 
-	public static String compile(String repositoryLocation, String code, boolean verification, boolean counterexamples, boolean quickcheck, String[] dependencies)
+	public String compile(String repositoryLocation, String code, boolean verification, boolean counterexamples, boolean quickcheck, boolean boogie, String[] dependencies)
 			throws IOException, HttpException {
 		DirectoryRoot repository = new DirectoryRoot(repositoryLocation,Main.REGISTRY);
 		// Determine project directory
@@ -179,10 +181,10 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		// Write default package name
 		configuration.write(Activator.PKGNAME_CONFIG_OPTION,new Value.UTF8("main"));
 		//
-//		internal verification is disabled for now
-//		if(verification) {
-//			configuration.write(Activator.VERIFY_CONFIG_OPTION, new Value.Bool(true));
-//		}
+		if(!boogie && verification) {
+			// Activate internal verification *only* if boogie is not available!
+			configuration.write(Activator.VERIFY_CONFIG_OPTION, new Value.Bool(true));
+		}
 		if(counterexamples) {
 			configuration.write(Activator.COUNTEREXAMPLE_CONFIG_OPTION, new Value.Bool(true));
 		}
@@ -190,8 +192,8 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		Command.Project project = new CommandProject(localRoot,configuration);
 		// Initialise the whiley platform
 		WHILEY_PLATFORM.initialise(configuration, project);
-		if(verification) {
-			// Initialise Boogie if we want to run verification.
+		if(boogie && verification) {
+			// Initialise Boogie (if applicable) and we want verification.
 			BOOGIE_PLATFORM.initialise(configuration, project);
 		}
 		JS_PLATFORM.initialise(configuration, project);
