@@ -4,7 +4,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Map;
 
-import com.whileyweb.util.HtmlPage;
+import com.whileyweb.util.*;
 
 public class FrontPage extends HtmlPage {
 	private final String[] dependencies;

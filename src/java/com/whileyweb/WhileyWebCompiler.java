@@ -1,6 +1,7 @@
 package com.whileyweb;
 
 import static wyc.Activator.WHILEY_PLATFORM;
+import static wyboogie.Activator.BOOGIE_PLATFORM;
 import static wyjs.Activator.JS_PLATFORM;
 
 import java.io.BufferedReader;
@@ -88,16 +89,19 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 			TEMPORARY_SCHEMA,
 			WyMain.LOCAL_CONFIG_SCHEMA,
 			WHILEY_PLATFORM.getConfigurationSchema(),
+			BOOGIE_PLATFORM.getConfigurationSchema(),
 			JS_PLATFORM.getConfigurationSchema(),
 			QuickCheck.DESCRIPTOR.getConfigurationSchema());
 
 	private final int timeout;
 	private final String repository;
+	private final boolean boogie;
 
-	public WhileyWebCompiler(String repository, int timeout) throws IOException {
+	public WhileyWebCompiler(String repository, int timeout, boolean boogie) throws IOException {
 		super(HttpMethodDispatchHandler.ALLOW_POST);
 		this.repository = repository;
 		this.timeout = timeout;
+		this.boogie = boogie;
 	}
 
 	@Override
@@ -119,7 +123,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 				// timeout can be enforced. This is not the ideal way to do
 				// this, but for now it works.
 				ProcessTimerMethod.Outcome result = ProcessTimerMethod.exec(timeout, this.getClass().getCanonicalName(),
-						"compile", repository, code, verification, counterexamples, quickcheck, dependencies);
+						"compile", repository, code, verification, counterexamples, quickcheck, boogie, dependencies);
 				//
 				if (result.exitCode() != null) {
 					String reply = result.getReturnAs(String.class);
@@ -167,7 +171,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		}
 	}
 
-	public static String compile(String repositoryLocation, String code, boolean verification, boolean counterexamples, boolean quickcheck, String[] dependencies)
+	public static String compile(String repositoryLocation, String code, boolean verification, boolean counterexamples, boolean quickcheck, boolean boogie, String[] dependencies)
 			throws IOException, HttpException {
 		DirectoryRoot repository = new DirectoryRoot(repositoryLocation,Main.REGISTRY);
 		// Determine project directory
@@ -177,7 +181,8 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		// Write default package name
 		configuration.write(Activator.PKGNAME_CONFIG_OPTION,new Value.UTF8("main"));
 		//
-		if(verification) {
+		if(!boogie && verification) {
+			// Activate internal verification *only* if boogie is not available!
 			configuration.write(Activator.VERIFY_CONFIG_OPTION, new Value.Bool(true));
 		}
 		if(counterexamples) {
@@ -187,6 +192,10 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		Command.Project project = new CommandProject(localRoot,configuration);
 		// Initialise the whiley platform
 		WHILEY_PLATFORM.initialise(configuration, project);
+		if(boogie && verification) {
+			// Initialise Boogie (if applicable) and we want verification.
+			BOOGIE_PLATFORM.initialise(configuration, project);
+		}
 		JS_PLATFORM.initialise(configuration, project);
 		// Refresh system state
 		//
@@ -235,7 +244,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 				result.put("result", "success");
 			}
 		} catch (Exception e) {
-			//e.printStackTrace();
+			// e.printStackTrace();
 			// Some kind of internal failure has occurred, so simply report this.
 			result.put("result", "exception");
 			result.put("text", e.getMessage());
