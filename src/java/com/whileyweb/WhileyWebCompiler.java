@@ -171,7 +171,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 		}
 	}
 
-	public String compile(String repositoryLocation, String code, boolean verification, boolean counterexamples, boolean quickcheck, boolean boogie, String[] dependencies)
+	public static String compile(String repositoryLocation, String code, boolean verification, boolean counterexamples, boolean quickcheck, boolean boogie, String[] dependencies)
 			throws IOException, HttpException {
 		DirectoryRoot repository = new DirectoryRoot(repositoryLocation,Main.REGISTRY);
 		// Determine project directory

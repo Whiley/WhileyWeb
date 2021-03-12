@@ -91,6 +91,8 @@ public class Main {
 					repositoryLocation = System.getProperty("user.home") + File.separator + ".whiley" + File.separator + "repository";
 				}
 		}
+		System.out.println("Working directory is " + System.getProperty("user.dir"));
+		System.out.println("Whiley repository is " + repositoryLocation);
 		// Extract Google Analytics tracking ID
 		String gaTrackingID = (String) options.get("analytics");
 		//
@@ -206,7 +208,11 @@ public class Main {
 		return items;
     }
 
-    private static boolean determineBoogieAvailable() {
+	/**
+	 * Check whether or not Boogie is available on this system.
+	 * @return
+	 */
+	private static boolean determineBoogieAvailable() {
 		// Create dummy boogie file
 		BoogieFile bf = new BoogieFile();
 		boolean response;
