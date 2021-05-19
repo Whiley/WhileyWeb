@@ -54,8 +54,8 @@
     <dependency>
       <groupId>org.whiley</groupId>
       <artifactId>wyboogie</artifactId>
-      <version>[0.2.6,0.3.0)</version>
-    </dependency>        
+      <version>[0.2.5,0.2.6)</version>
+    </dependency>
     <dependency>
       <groupId>org.whiley</groupId>
       <artifactId>wyjs</artifactId>
