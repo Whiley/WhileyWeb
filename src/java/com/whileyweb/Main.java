@@ -64,7 +64,7 @@ public class Main {
 
 	private static final OptArg[] OPTIONS = {
 			// Standard options
-			new OptArg("timeout", "t", OptArg.INT, "Set timeout constraint per query (in ms)", 10000),
+			new OptArg("timeout", "t", OptArg.INT, "Set timeout constraint per query (in ms)", 30000),
 			new OptArg("pkgs", "p", OptArg.STRINGARRAY, "Specify packages to make available for compilation", new String[] {"std"}),
 			new OptArg("repository","r", OptArg.STRING, "Specify location of package repository", null),
 			new OptArg("analytics","g", OptArg.STRING, "Specify Google analytics Tracking ID", null)
