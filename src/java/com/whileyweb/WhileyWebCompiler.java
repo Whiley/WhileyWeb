@@ -45,13 +45,15 @@ import wyil.lang.WyilFile.Attr.SyntaxError;
 public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 	private final int timeout;
 	private final String repository;
+	private final String[] whileypath;
 	private final boolean boogie;
 
-	public WhileyWebCompiler(String repository, int timeout, boolean boogie) throws IOException {
+	public WhileyWebCompiler(String repository, String[] whileypath, int timeout, boolean boogie) throws IOException {
 		super(HttpMethodDispatchHandler.ALLOW_POST);
 		this.repository = repository;
 		this.timeout = timeout;
 		this.boogie = boogie;
+		this.whileypath = whileypath;
 	}
 
 	@Override
@@ -66,7 +68,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 			boolean verification = json.getBoolean("verify");
 			boolean counterexamples = json.getBoolean("counterexamples");
 			boolean quickcheck = json.getBoolean("quickcheck");
-			String[] dependencies = toStringArray(json.getJSONArray("dependencies"));
+//			String[] dependencies = toStringArray(json.getJSONArray("dependencies"));
 			Path workingDir = null;
 			// Run the build
 			try {
@@ -76,7 +78,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 				// timeout can be enforced. This is not the ideal way to do
 				// this, but for now it works.
 				ProcessTimerMethod.Outcome result = ProcessTimerMethod.exec(timeout, this.getClass().getCanonicalName(),
-						"compile", workingDir.toFile().getAbsolutePath(), code, verification, counterexamples, quickcheck, boogie, dependencies);
+						"compile", workingDir.toFile().getAbsolutePath(), code, verification, counterexamples, quickcheck, boogie, whileypath);
 				//
 				if (result.exitCode() != null) {
 					String reply = result.getReturnAs(String.class);
@@ -131,6 +133,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 
 	public static String compile(String workingDir, String code, boolean verification, boolean counterexamples, boolean quickcheck, boolean boogie, String[] dependencies)
 			throws IOException, HttpException {
+		List<File> whileypath = toWhileyPath(dependencies);
 		File workingDirFile = new File(workingDir);
 		HashMap<String, Object> result = new HashMap<>();
 		// Construct a suitable mailbox
@@ -142,7 +145,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 			// Write source file contents
 			writeWhileyFile(workingDirFile, main, code);
 			// Configure & Run Whiley Compiler
-			wyc.Compiler wyc = new wyc.Compiler().setTarget(main).setWhileyDir(workingDirFile).setWyilDir(workingDirFile)
+			wyc.Compiler wyc = new wyc.Compiler().setTarget(main).setWhileyDir(workingDirFile).setWyilDir(workingDirFile).setWhileyPath(whileypath)
 					.addSource(main).setErrorHandler(handler);
 			// Run the compiler and manage errors.
 			boolean ok = wyc.run();
@@ -150,13 +153,14 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 			if(ok && verification) {
 				// All is well, manage verification (if relevant)
 				wyboogie.Main verifier = new wyboogie.Main().setTarget(main).setWyilDir(workingDirFile)
-						.setBplDir(workingDirFile).addSource(main).setBoogieOption("useArrayTheory", true)
+						.setBplDir(workingDirFile).setWhileyPath(whileypath).addSource(main).setBoogieOption("useArrayTheory", true)
 						.setErrorHandler(handler);
 				ok = verifier.run();
 			}
 			// Run QuickCheck (if requested)
 			if(ok && quickcheck) {
-				wyc.Check check = new wyc.Check().setWyilDir(workingDirFile).addSource(main).setErrorHandler(handler);
+				wyc.Check check = new wyc.Check().setWyilDir(workingDirFile).setWhileyPath(whileypath).addSource(main)
+						.setErrorHandler(handler);
 				ok = check.run();
 			}
 			if(!ok) {
@@ -188,6 +192,14 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 			items[i] = arr.getString(i);
 		}
 		return items;
+	}
+
+	public static List<File> toWhileyPath(String[] deps) {
+		ArrayList<File> whileypath = new ArrayList<>();
+		for(String dep : deps) {
+			whileypath.add(new File(dep));
+		}
+		return whileypath;
 	}
 
 	/**
