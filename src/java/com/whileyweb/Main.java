@@ -25,14 +25,6 @@ import jwebkit.http.HttpFileHandler;
 import wyboogie.core.BoogieFile;
 import wyboogie.util.Boogie;
 import wyc.lang.WhileyFile;
-import wycli.cfg.ConfigFile;
-import wycli.lang.SemanticVersion;
-import wyfs.lang.Content;
-import wyfs.lang.Path;
-import wyfs.lang.Path.Entry;
-import wyfs.util.DefaultContentRegistry;
-import wyfs.util.DirectoryRoot;
-import wyfs.util.ZipFile;
 import wyil.lang.WyilFile;
 
 /**
@@ -50,17 +42,6 @@ public class Main {
 	public static final ContentType TEXT_CSS = ContentType.create("text/css");
 	public static final ContentType IMAGE_PNG = ContentType.create("image/png");
 	public static final ContentType IMAGE_GIF = ContentType.create("image/gif");
-
-	/**
-	 * Default implementation of a content registry. This associates whiley and
-	 * wyil files with their respective content types.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final Content.Registry REGISTRY = new DefaultContentRegistry()
-			.register(WhileyFile.ContentType, "whiley").register(WyilFile.ContentType, "wyil")
-			.register(ConfigFile.ContentType, "toml").register(ZipFile.ContentType, "zip");
 
 	private static final OptArg[] OPTIONS = {
 			// Standard options
@@ -100,11 +81,12 @@ public class Main {
 			System.out.println("Google analytics enabled (" + gaTrackingID + ")");
 		}
 		// Create the repository root
-		DirectoryRoot repository = new DirectoryRoot(repositoryLocation,REGISTRY);
-		// Determine list of installed packages
-		String[] pkgs = determineInstalledPackages(repository);
-		// Determine default configure deps
-		String[] deps = determineDefaultDependencies(pkgs,packages);
+//		// Determine list of installed packages
+//		String[] pkgs = determineInstalledPackages(repository);
+		String[] pkgs = new String[0];
+//		// Determine default configure deps
+//		String[] deps = determineDefaultDependencies(pkgs,packages);
+		String[] deps = new String[0];
 		// Attempt to start the web server
 		boolean boogie = determineBoogieAvailable();
 
@@ -168,45 +150,44 @@ public class Main {
 		}
     }
 
-	private static String[] determineDefaultDependencies(String[] pkgs, String... deps) {
-		ArrayList<String> results = new ArrayList<>();
-		for (String dep : deps) {
-			String concrete = findLatestVersion(pkgs, dep);
-			if (concrete != null) {
-				results.add(concrete);
-			}
-
-		}
-		System.out.println("Found " + results.size() + " matching dependencies: " + results);
-		return results.toArray(new String[results.size()]);
-	}
-
-	private static String findLatestVersion(String[] pkgs, String dep) {
-		String prefix = dep + "-v";
-		String best = null;
-		SemanticVersion ver = null;
-		for (int i = 0; i != pkgs.length; ++i) {
-			String pkg = pkgs[i];
-			if (pkg.startsWith(prefix)) {
-				SemanticVersion v = new SemanticVersion(pkg.substring(prefix.length()));
-				if (best == null || v.compareTo(ver) > 0) {
-					best = pkg;
-					ver = v;
-				}
-			}
-		}
-		return best;
-	}
-
-    private static String[] determineInstalledPackages(DirectoryRoot repository) throws IOException {
-		List<Entry<ZipFile>> pkgs = repository.get(Content.filter("**", ZipFile.ContentType));
-		String[] items = new String[pkgs.size()];
-		for(int i=0;i!=pkgs.size();++i) {
-			items[i] = pkgs.get(i).id().toString();
-		}
-		System.out.println("Found " + items.length + " installed packages: " + Arrays.toString(items));
-		return items;
-    }
+//	private static String[] determineDefaultDependencies(String[] pkgs, String... deps) {
+//		ArrayList<String> results = new ArrayList<>();
+//		for (String dep : deps) {
+//			String concrete = findLatestVersion(pkgs, dep);
+//			if (concrete != null) {
+//				results.add(concrete);
+//			}
+//
+//		}
+//		System.out.println("Found " + results.size() + " matching dependencies: " + results);
+//		return results.toArray(new String[results.size()]);
+//	}
+//
+//	private static String findLatestVersion(String[] pkgs, String dep) {
+//		String prefix = dep + "-v";
+//		String best = null;
+//		SemanticVersion ver = null;
+//		for (int i = 0; i != pkgs.length; ++i) {
+//			String pkg = pkgs[i];
+//			if (pkg.startsWith(prefix)) {
+//				SemanticVersion v = new SemanticVersion(pkg.substring(prefix.length()));
+//				if (best == null || v.compareTo(ver) > 0) {
+//					best = pkg;
+//					ver = v;
+//				}
+//			}
+//		}
+//		return best;
+//	}
+//    private static String[] determineInstalledPackages(DirectoryRoot repository) throws IOException {
+//		List<Entry<ZipFile>> pkgs = repository.get(Content.filter("**", ZipFile.ContentType));
+//		String[] items = new String[pkgs.size()];
+//		for(int i=0;i!=pkgs.size();++i) {
+//			items[i] = pkgs.get(i).id().toString();
+//		}
+//		System.out.println("Found " + items.length + " installed packages: " + Arrays.toString(items));
+//		return items;
+//    }
 
 	/**
 	 * Check whether or not Boogie is available on this system.
