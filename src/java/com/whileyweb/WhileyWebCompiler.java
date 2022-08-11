@@ -153,7 +153,7 @@ public class WhileyWebCompiler extends HttpMethodDispatchHandler {
 			if(ok && verification) {
 				// All is well, manage verification (if relevant)
 				wyboogie.Main verifier = new wyboogie.Main().setTarget(main).setWyilDir(workingDirFile)
-						.setBplDir(workingDirFile).setWhileyPath(whileypath).addSource(main).setBoogieOption("useArrayTheory", true)
+						.setBplDir(workingDirFile).addSource(main).setBoogieOption("useArrayTheory", true)
 						.setErrorHandler(handler);
 				ok = verifier.run();
 			}
