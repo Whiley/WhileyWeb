@@ -8,12 +8,10 @@ import com.whileyweb.util.*;
 
 public class FrontPage extends HtmlPage {
 	private final String[] dependencies;
-	private final String[] packages;
 
-	public FrontPage(String gaTrackingID, String[] packages, String[] dependencies) {
+	public FrontPage(String gaTrackingID, String[] dependencies) {
 		super(gaTrackingID);
 		this.dependencies = dependencies;
-		this.packages = packages;
 	}
 
 	@Override

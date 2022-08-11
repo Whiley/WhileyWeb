@@ -1,6 +1,7 @@
 package com.whileyweb;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.SocketTimeoutException;
@@ -25,14 +26,6 @@ import jwebkit.http.HttpFileHandler;
 import wyboogie.core.BoogieFile;
 import wyboogie.util.Boogie;
 import wyc.lang.WhileyFile;
-import wycli.cfg.ConfigFile;
-import wycli.lang.SemanticVersion;
-import wyfs.lang.Content;
-import wyfs.lang.Path;
-import wyfs.lang.Path.Entry;
-import wyfs.util.DefaultContentRegistry;
-import wyfs.util.DirectoryRoot;
-import wyfs.util.ZipFile;
 import wyil.lang.WyilFile;
 
 /**
@@ -51,21 +44,10 @@ public class Main {
 	public static final ContentType IMAGE_PNG = ContentType.create("image/png");
 	public static final ContentType IMAGE_GIF = ContentType.create("image/gif");
 
-	/**
-	 * Default implementation of a content registry. This associates whiley and
-	 * wyil files with their respective content types.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final Content.Registry REGISTRY = new DefaultContentRegistry()
-			.register(WhileyFile.ContentType, "whiley").register(WyilFile.ContentType, "wyil")
-			.register(ConfigFile.ContentType, "toml").register(ZipFile.ContentType, "zip");
-
 	private static final OptArg[] OPTIONS = {
 			// Standard options
 			new OptArg("timeout", "t", OptArg.INT, "Set timeout constraint per query (in ms)", 30000),
-			new OptArg("pkgs", "p", OptArg.STRINGARRAY, "Specify packages to make available for compilation", new String[] {"std"}),
+			new OptArg("pkgs", "p", OptArg.STRINGARRAY, "Specify packages to make available for compilation", new String[] {"std","evm"}),
 			new OptArg("repository","r", OptArg.STRING, "Specify location of package repository", null),
 			new OptArg("analytics","g", OptArg.STRING, "Specify Google analytics Tracking ID", null)
 	};
@@ -100,16 +82,16 @@ public class Main {
 			System.out.println("Google analytics enabled (" + gaTrackingID + ")");
 		}
 		// Create the repository root
-		DirectoryRoot repository = new DirectoryRoot(repositoryLocation,REGISTRY);
+		File repository = new File(repositoryLocation);
 		// Determine list of installed packages
-		String[] pkgs = determineInstalledPackages(repository);
+		File[] pkgs = determineInstalledPackages(repository);
 		// Determine default configure deps
-		String[] deps = determineDefaultDependencies(pkgs,packages);
+		String[] whileypath = determineDefaultDependencies(pkgs,packages);
 		// Attempt to start the web server
 		boolean boogie = determineBoogieAvailable();
 
 		try {
-			HttpServer server = startWebServer(repositoryLocation, pkgs, deps, timeout, boogie, gaTrackingID);
+			HttpServer server = startWebServer(repositoryLocation, whileypath, timeout, boogie, gaTrackingID);
 			server.start();
 			server.awaitTermination(-1, TimeUnit.MILLISECONDS);
 		} catch(Exception e) {
@@ -118,7 +100,7 @@ public class Main {
 	}
 
 
-	public static HttpServer startWebServer(String repository, String[] packages, String[] dependencies, int timeout, boolean boogie, String gaTrackingID) throws IOException {
+	public static HttpServer startWebServer(String repository, String[] whileypath, int timeout, boolean boogie, String gaTrackingID) throws IOException {
 		// Construct appropriate configuration for socket over which HTTP
 		// server will run.
 		SocketConfig socketConfig = SocketConfig.custom().setSoTimeout(1500).build();
@@ -138,8 +120,8 @@ public class Main {
 						.registerHandler("/bin/js/*", new HttpFileHandler(new File("."),TEXT_JAVASCRIPT))
 						.registerHandler("*.png", new HttpFileHandler(new File("."),IMAGE_PNG))
 						.registerHandler("*.gif", new HttpFileHandler(new File("."),IMAGE_GIF))
-						.registerHandler("/compile", new WhileyWebCompiler(repository, timeout, boogie))
-						.registerHandler("/", new FrontPage(gaTrackingID,packages,dependencies))
+						.registerHandler("/compile", new WhileyWebCompiler(repository, whileypath, timeout, boogie))
+						.registerHandler("/", new FrontPage(gaTrackingID,whileypath))
 						.registerHandler("*", new HtmlPage(gaTrackingID))
 						.create();
 				// Attempt to start server
@@ -168,7 +150,7 @@ public class Main {
 		}
     }
 
-	private static String[] determineDefaultDependencies(String[] pkgs, String... deps) {
+	private static String[] determineDefaultDependencies(File[] pkgs, String... deps) {
 		ArrayList<String> results = new ArrayList<>();
 		for (String dep : deps) {
 			String concrete = findLatestVersion(pkgs, dep);
@@ -181,16 +163,16 @@ public class Main {
 		return results.toArray(new String[results.size()]);
 	}
 
-	private static String findLatestVersion(String[] pkgs, String dep) {
+	private static String findLatestVersion(File[] pkgs, String dep) {
 		String prefix = dep + "-v";
 		String best = null;
-		SemanticVersion ver = null;
+		Semantic.Version ver = null;
 		for (int i = 0; i != pkgs.length; ++i) {
-			String pkg = pkgs[i];
+			String pkg = pkgs[i].getName();
 			if (pkg.startsWith(prefix)) {
-				SemanticVersion v = new SemanticVersion(pkg.substring(prefix.length()));
+				Semantic.Version v = new Semantic.Version(pkg.substring(prefix.length(),pkg.length()-4));
 				if (best == null || v.compareTo(ver) > 0) {
-					best = pkg;
+					best = pkgs[i].getAbsolutePath();
 					ver = v;
 				}
 			}
@@ -198,12 +180,8 @@ public class Main {
 		return best;
 	}
 
-    private static String[] determineInstalledPackages(DirectoryRoot repository) throws IOException {
-		List<Entry<ZipFile>> pkgs = repository.get(Content.filter("**", ZipFile.ContentType));
-		String[] items = new String[pkgs.size()];
-		for(int i=0;i!=pkgs.size();++i) {
-			items[i] = pkgs.get(i).id().toString();
-		}
+    private static File[] determineInstalledPackages(File repository) throws IOException {
+		File[] items = repository.listFiles(f -> f.getName().endsWith(".zip"));
 		System.out.println("Found " + items.length + " installed packages: " + Arrays.toString(items));
 		return items;
     }
