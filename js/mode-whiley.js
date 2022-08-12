@@ -12,7 +12,7 @@ ace.define('ace/mode/whiley', function(require, exports, module) {
         "function", "fail", "from", "if", "import", "in", "int", "is", "method",
         "native", "new", "no", "null", "package", "private", "protected",
         "property", "public", "requires", "return", "skip", "some", "string",
-        "switch", "total", "throw", "throws", "true", "try", "type", "void",
+              "switch", "total", "throw", "throws", "true", "try", "type", "unsafe", "void",
         "where", "while"];
     };
 
