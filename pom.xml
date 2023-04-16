@@ -90,10 +90,10 @@
     	<version>3.5</version>
     </dependency>
     <dependency>
-    	<groupId>org.json</groupId>
-    	<artifactId>org.json</artifactId>
-    	<version>chargebee-1.0</version>
-    </dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20230227</version>
+    </dependency>    
   </dependencies>
 
   <!-- ============================================== -->
